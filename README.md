@@ -77,10 +77,10 @@ assets/img/           artwork pulled from the Telegram channel
 | Hero | `#top` | `#top` | Tagline, CTAs, stats |
 | About | `#biz-haqimizda` | `#o-nas` | Positioning, four trust points |
 | New release | — | — | Featured: *Daloilul xoyrot* |
-| Books | `#kitoblar` | `#knigi` | Four catalogue cards |
+| Books | `#kitoblar` | `#knigi` | Three catalogue cards |
 | Series | `#sittayi` | `#sittai` | The five-book classical Turkic series |
 | Quotes | `#hikmatlar` | `#mudrosti` | Four quotes drawn from published books |
-| Contact | `#aloqa` | `#kontakty` | Telegram, two phone numbers, contact bot |
+| Contact | `#aloqa` | `#kontakty` | Telegram channel, phone, contact bot |
 
 Anchors are localised, so the language pill always links to the page root rather
 than preserving the reader's scroll position.
@@ -106,9 +106,9 @@ Everything is sourced from the channel's public posts (`t.me/s/tavfiqnashr`):
 
 - **Books** — *Daloilul xoyrot* (Muhammad ibn Jazuliy, 236 pp., hardcover),
   *Komil inson* (Aziziddin Nasafiy), *Tasavvuf bilan tanishuv* (Abdulvaliy Abdussalom),
-  the *Sittayi turkiy* series, and *Flowgorithm* (60 000 so'm).
+  and the *Sittayi turkiy* series.
 - **Quotes** — verbatim from the channel's book excerpt posts.
-- **Contacts** — +998 97 521 67 00 (general), +998 99 725 12 44 (Flowgorithm orders),
+- **Contacts** — +998 97 521 67 00 (general) and
   [@Akrom_Malikka_maktubBot](https://t.me/Akrom_Malikka_maktubBot).
 - **Regulatory notes** — the Committee for Religious Affairs approval references
   quoted in the *Ibodati Islomiyya* and *Risolayi marg'uba* posts.
@@ -119,11 +119,8 @@ hardcoded — update it in `index.html` when it drifts.
 ## Images
 
 `assets/img/*.jpg` are the channel's own promotional graphics, downloaded from
-Telegram's CDN so the site has no external dependencies. Two notes:
+Telegram's CDN so the site has no external dependencies. One note:
 
-- `flowgorithm.jpg` is only 180×320 — the largest size Telegram serves publicly for
-  that post. Its card uses `object-fit: contain` so it is never upscaled into blur.
-  Replace it with a proper cover shot when one is available.
 - `logo.jpg` doubles as the favicon. A transparent SVG or PNG logo would be better;
   the current file is a JPEG with a cream background.
 
@@ -131,7 +128,8 @@ Telegram's CDN so the site has no external dependencies. Two notes:
 
 - **No e-commerce.** Every "buy" action points to Telegram or a phone number, which is
   how the publisher currently sells. Add a cart only if they want to take orders online.
-- **Prices** are only known for *Flowgorithm*; no other book has a published price.
+- **No prices are shown.** The channel has not published a price for any of the
+  three titles currently listed.
 - **The Russian text is a translation, not publisher-supplied copy.** Book and author
   names are transliterated (*Komil inson* → «Камиль инсан», *Aziziddin Nasafiy* →
   Азизуддин Насафи); the publisher may prefer different forms. Worth a review by a

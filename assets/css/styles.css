@@ -223,8 +223,8 @@ p{margin:0 0 1em}
 .note{font-size:.88rem; padding-left:1rem; border-left:2px solid var(--gold); color:#b3ac97 !important}
 
 /* ---------- Cards ---------- */
-/* 4 books: 4-up on wide, 2x2 on medium, stacked on small — never an orphan row */
-.cards{display:grid; grid-template-columns:repeat(4,1fr); gap:1.8rem}
+/* 3 books: 3-up on wide, stacked below — 2 columns would strand an orphan */
+.cards{display:grid; grid-template-columns:repeat(3,1fr); gap:1.8rem}
 .card{
   display:flex; flex-direction:column;
   background:var(--white); border:1px solid var(--line); border-radius:var(--radius);
@@ -235,14 +235,6 @@ p{margin:0 0 1em}
 .card-media{aspect-ratio:4/5; background:var(--cream-2); overflow:hidden}
 .card-media img{width:100%; height:100%; object-fit:cover; transition:transform .5s ease}
 .card:hover .card-media img{transform:scale(1.04)}
-
-/* Source photo is only 180x320 — contain it so it never upscales into blur */
-.card-media-contain{
-  background:
-    radial-gradient(120% 100% at 50% 0%, rgba(15,61,51,.1), transparent 70%),
-    var(--cream-2);
-}
-.card-media-contain img{object-fit:contain}
 .card-body{padding:1.5rem; display:flex; flex-direction:column; flex:1}
 .card-body p{font-size:.92rem; color:var(--muted)}
 .card .byline{font-family:var(--serif); font-style:italic; font-size:1.05rem; color:var(--green); margin-top:-.5em}
@@ -254,20 +246,9 @@ p{margin:0 0 1em}
   background:rgba(15,61,51,.08); color:var(--green);
   padding:.3rem .7rem; border-radius:999px;
 }
-.tag-alt{background:rgba(184,145,47,.16); color:#7d600f}
-
 .quote-mini{
   margin-top:auto; padding-top:1rem; border-top:1px solid var(--line);
   font-family:var(--serif); font-style:italic; font-size:1rem !important; color:var(--green) !important;
-}
-
-.ticks{list-style:none; padding:0; margin:0 0 1rem; display:flex; flex-direction:column; gap:.3rem}
-.ticks li{font-size:.9rem; color:var(--muted); padding-left:1.4rem; position:relative}
-.ticks li::before{content:"✓"; position:absolute; left:0; color:var(--gold); font-weight:700}
-
-.price{
-  font-family:var(--serif); font-size:1.5rem; color:var(--green) !important;
-  margin:.2rem 0 .8rem; font-weight:600;
 }
 
 .link-arrow{margin-top:auto; font-size:.9rem; font-weight:500; display:inline-flex; align-items:center; gap:.4rem}
@@ -354,11 +335,8 @@ p{margin:0 0 1em}
 .reveal.in{opacity:1; transform:none}
 
 /* ---------- Responsive ---------- */
-@media (max-width:1100px){
-  .cards{grid-template-columns:repeat(2,1fr)}
-}
-
 @media (max-width:920px){
+  .cards{grid-template-columns:1fr}
   .about-grid,.release,.contact{grid-template-columns:1fr}
   .release-media{max-width:460px}
   .quotes{columns:1}
@@ -483,7 +461,6 @@ p{margin:0 0 1em}
   .card{border-radius:18px}
   .card-media{aspect-ratio:1/1}
   .card-media img{object-position:center top}
-  .card-media-contain img{object-position:center}
   .card-body{padding:1.3rem}
   .card-body h3{font-size:1.25rem}
   .quote-mini{font-size:1.02rem !important}
@@ -537,10 +514,8 @@ p{margin:0 0 1em}
 }
 
 @media (max-width:620px){
-  .cards{grid-template-columns:1fr}
   /* One card per row is wide — a 4:3 crop keeps the card from towering */
   .card-media{aspect-ratio:4/3}
-  .card-media-contain{aspect-ratio:1/1}
 }
 
 @media (max-width:400px){
