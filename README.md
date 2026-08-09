@@ -13,6 +13,42 @@ A `UZ / RU` pill in the header switches between them, and each page carries
 `hreflang` links to the other. **Adding a section means editing both files** — the
 translations are hand-written, not generated at runtime.
 
+## Deployment
+
+Hosted on GitHub Pages from `main` at the repo root — no build step, no Actions
+workflow. Pushing to `main` republishes within a minute or so.
+
+- Repo: <https://github.com/ameer611/tavfiqnashr>
+- Fallback URL: <https://ameer611.github.io/tavfiqnashr/>
+- Custom domain: **tavfiqnashr.uz** (registered at ahost)
+
+`CNAME` and `.nojekyll` at the repo root are both load-bearing: deleting `CNAME`
+resets the custom domain, and `.nojekyll` stops Pages from running the files
+through Jekyll.
+
+### DNS records
+
+`tavfiqnashr.uz` is an apex domain, so it needs **A records** — a CNAME is not
+valid at the apex. In the ahost DNS panel:
+
+| Type | Host | Value |
+| --- | --- | --- |
+| A | `@` | `185.199.108.153` |
+| A | `@` | `185.199.109.153` |
+| A | `@` | `185.199.110.153` |
+| A | `@` | `185.199.111.153` |
+| CNAME | `www` | `ameer611.github.io.` |
+
+Optional IPv6 (AAAA on `@`): `2606:50c0:8000::153`, `2606:50c0:8001::153`,
+`2606:50c0:8002::153`, `2606:50c0:8003::153`.
+
+Check propagation, then turn on HTTPS once GitHub has issued the certificate:
+
+```bash
+gh api repos/ameer611/tavfiqnashr/pages/health --jq '.domain | {dns_resolves, is_valid, reason}'
+gh api -X PUT repos/ameer611/tavfiqnashr/pages -F https_enforced=true
+```
+
 ## Running
 
 No build step. Any static server works:
