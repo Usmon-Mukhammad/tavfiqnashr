@@ -86,11 +86,67 @@
   .login-foot a{color:var(--muted)}
   .login-foot a:hover{color:var(--green)}
 
+  /* Mobile keeps the single cream column; the aside is just the crest. */
+  .aside-orn,.aside-tag,.aside-quote{display:none}
+
   @media (max-width:420px){
     .login-card{padding:2rem 1.4rem 1.5rem; border-radius:18px}
     .login-logo{width:80px; height:80px}
     .login-logo img{width:66px; height:66px}
   }
+
+  /* ---------- Desktop: two panes ----------
+     A narrow card centred in a wide window wastes the space and looks like a
+     scaled-up phone. From 900px the card becomes a brand pane beside the form. */
+  @media (min-width:900px){
+    .login-card{
+      width:min(100%, 58rem); padding:0; text-align:left; overflow:hidden;
+      display:grid; grid-template-columns:1.02fr 1fr; align-items:stretch;
+    }
+    .login-aside{
+      position:relative; overflow:hidden;
+      padding:3.8rem 2.9rem;
+      background:linear-gradient(155deg, var(--green) 0%, var(--green-deep) 100%);
+      display:flex; align-items:center;
+    }
+    .aside-orn{
+      display:block; position:absolute; inset:0; opacity:.55;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Cg fill='none' stroke='%23c9a34a' stroke-width='1' stroke-opacity='.38'%3E%3Cpath d='M35 3 57 14v24L35 49 13 38V14z'/%3E%3Cpath d='M35 14 47 20v13l-12 6-12-6V20z'/%3E%3C/g%3E%3C/svg%3E");
+      mask-image:linear-gradient(200deg, #000 5%, transparent 70%);
+      -webkit-mask-image:linear-gradient(200deg, #000 5%, transparent 70%);
+    }
+    .aside-inner{position:relative}
+
+    .login-aside .login-logo{
+      margin-bottom:1.6rem; background:rgba(250,246,236,.96);
+      border-color:rgba(201,163,74,.7); box-shadow:0 0 0 7px rgba(201,163,74,.13);
+    }
+    .login-aside .login-brand{font-size:1.75rem; color:var(--cream)}
+    .login-aside .login-kicker{color:var(--gold-light); margin-top:.5rem}
+
+    .aside-tag{
+      display:block; margin:1.7rem 0 0; padding-top:1.5rem;
+      border-top:1px solid rgba(201,163,74,.3);
+      font-family:var(--serif); font-size:1.18rem; font-style:italic;
+      color:var(--gold-light);
+    }
+    .aside-quote{
+      display:block; margin:1.1rem 0 0;
+    }
+    .aside-quote p{
+      margin:0; font-size:.93rem; line-height:1.65; color:#b9c7c0;
+    }
+
+    /* Centre the form against the taller brand pane, otherwise it sits high
+       and leaves a dead band under the submit button. */
+    .login-main{
+      padding:3.4rem 3rem; display:flex; flex-direction:column; justify-content:center;
+    }
+    .login-main h1{margin-top:0; padding-top:0; border-top:0; font-size:1.7rem}
+    .login-sub{margin-bottom:1.9rem}
+    .login-foot{text-align:left}
+  }
+
   @media (prefers-reduced-motion:reduce){ .login-card{animation:none} }
   .admin{width:min(100% - 2rem, 1060px); margin:0 auto; padding:2.2rem 0 4rem}
   .admin-bar{display:flex; align-items:center; gap:1rem; margin-bottom:1.8rem}
@@ -141,10 +197,20 @@
   <div class="login-glow" aria-hidden="true"></div>
 
   <div class="login-card">
-    <span class="login-logo"><img src="../assets/img/logo.jpg" alt="" width="76" height="76"></span>
-    <p class="login-brand">TAVFIQNASHR</p>
-    <p class="login-kicker">Nashriyoti</p>
+   <aside class="login-aside">
+    <div class="aside-orn" aria-hidden="true"></div>
+    <div class="aside-inner">
+      <span class="login-logo"><img src="../assets/img/logo.jpg" alt="" width="76" height="76"></span>
+      <p class="login-brand">TAVFIQNASHR</p>
+      <p class="login-kicker">Nashriyoti</p>
+      <p class="aside-tag">O‘qiladigan kitoblar bulog‘i</p>
+      <blockquote class="aside-quote">
+        <p>Ilm bilan tanishing, qalbingizni yoriting.</p>
+      </blockquote>
+    </div>
+   </aside>
 
+   <div class="login-main">
     <h1>Tahrirlash paneli</h1>
     <p class="login-sub">Maqolalarni qo‘shish va tahrirlash uchun tizimga kiring.</p>
 
@@ -166,6 +232,7 @@
     </form>
 
     <p class="login-foot"><a href="../">← Saytga qaytish</a></p>
+   </div>
   </div>
 </section>
 
