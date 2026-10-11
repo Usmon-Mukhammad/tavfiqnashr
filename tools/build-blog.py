@@ -244,12 +244,11 @@ def shell(lang, *, title, desc, canonical, og_url, og_image, body,
     up = "../" * c["depth"]
     other = "ru" if lang == "uz" else "uz"
     oc = L[other]
-    # The blog entry sits second-to-last, immediately before Aloqa / Контакты,
-    # so generated pages match the order on the hand-written homepages.
+    # The blog entry goes last, after Aloqa / Контакты, matching the order on
+    # the hand-written homepages.
     def nav_html(mark_current):
         items = [(f'{up}{c["home"]}{href}', E(label), "") for href, label in c["nav"]]
-        items.insert(len(items) - 1,
-                     ("index.html", E(c["blog_nav"]),
+        items.append(("index.html", E(c["blog_nav"]),
                       ' aria-current="page"' if mark_current else ""))
         return "\n".join(f'      <a href="{h}"{x}>{t}</a>' for h, t, x in items)
 
