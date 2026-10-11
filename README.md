@@ -65,10 +65,67 @@ starts the same server from the editor's preview pane.)
 ```
 index.html            Uzbek page, all sections
 ru.html               Russian page, same structure
+blog/                 generated — uz listing + articles
+blog/ru/              generated — ru listing + articles
+content/blog/uz/      Markdown sources (uz)
+content/blog/ru/      Markdown sources (ru)
+tools/build-blog.py   regenerates the blog from Markdown
+tools/make-og-image.py regenerates the social cards
 assets/css/styles.css hand-written CSS, no framework
 assets/js/main.js     mobile menu, sticky header, scroll reveal, back-to-top
 assets/img/           artwork pulled from the Telegram channel
 ```
+
+## Blog
+
+Articles are written as Markdown and compiled to static HTML — there is still no
+build step at deploy time, the HTML is committed.
+
+```bash
+python3 tools/build-blog.py
+```
+
+That reads `content/blog/<lang>/<slug>.md` and writes:
+
+| Output | URL |
+| --- | --- |
+| `blog/index.html` | `/blog/` |
+| `blog/<slug>.html` | `/blog/<slug>.html` |
+| `blog/ru/index.html` | `/blog/ru/` |
+| `blog/ru/<slug>.html` | `/blog/ru/<slug>.html` |
+
+It also rewrites the "latest articles" teaser on both homepages, between the
+`<!-- BLOG:START -->` / `<!-- BLOG:END -->` markers. **Do not hand-edit anything
+inside those markers or under `blog/`** — it is overwritten on the next run. The
+command is idempotent: run it after any `.md` change and commit the result.
+
+### Adding a post
+
+Create `content/blog/uz/<slug>.md` (and the same `<slug>.md` under `ru/` for the
+translation), then run the build. Front matter is `key: value` lines ended by a
+blank line:
+
+```
+title: Tasavvuf nima? Mashhur ta'riflar
+date: 2026-09-14
+description: One sentence, used for the listing card and og:description.
+source: "Tasavvuf bilan tanishuv" — Abdulvaliy Abdussalom
+tags: Tasavvuf
+
+Body starts here.
+```
+
+`title`, `date` and `description` are required; `source` and `tags` are optional.
+Posts are ordered newest first by `date`.
+
+Supported Markdown: `##`/`###` headings, paragraphs, `>` blockquotes (a line
+starting with an em dash becomes the attribution), `-` and `1.` lists, `---`
+rules, `**bold**`, `*italic*`, `[links](url)`. That subset is deliberate — the
+parser is ~40 lines of stdlib in `tools/build-blog.py`, with no dependencies.
+
+Matching slugs across `uz/` and `ru/` are linked as translations of each other.
+If a slug exists in only one language, the build prints a note and that page's
+language switcher points at the other language's blog index instead.
 
 ## Sections
 
@@ -80,6 +137,7 @@ assets/img/           artwork pulled from the Telegram channel
 | Books | `#kitoblar` | `#knigi` | Three catalogue cards |
 | Series | `#sittayi` | `#sittai` | The five-book classical Turkic series |
 | Quotes | `#hikmatlar` | `#mudrosti` | Four quotes drawn from published books |
+| Blog teaser | `#maqolalar` | `#stati` | Latest three articles (generated) |
 | Contact | `#aloqa` | `#kontakty` | Telegram channel, phone, contact bot |
 
 Anchors are localised, so the language pill always links to the page root rather
@@ -136,5 +194,10 @@ Telegram's CDN so the site has no external dependencies. One note:
   native speaker before launch.
 - **No Uzbek Cyrillic version**, though part of the audience reads it — one of the
   book covers is set in Cyrillic.
+- **The seed blog posts are compiled from the channel's own published excerpts**
+  and attributed to the source books, but nobody at the publisher has reviewed
+  the selection or the Russian translations of them yet.
+- **Blog posts share the site-wide social card.** Per-article images would need
+  `og:image` support in the front matter.
 - The fonts load from Google Fonts, so first paint depends on an external request.
   Self-host the two families if the site must work fully offline.
