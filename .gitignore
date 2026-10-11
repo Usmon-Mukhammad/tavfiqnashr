@@ -9,3 +9,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Worker tooling
+worker/node_modules/
+worker/.wrangler/

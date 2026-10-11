@@ -1,0 +1,25 @@
+# Cloudflare Worker: login + GitHub commit API for the TAVFIQNASHR blog editor.
+#
+# It guards only /api/admin/* . Everything else on the domain keeps being served
+# by GitHub Pages, so the public site stays entirely static.
+#
+# Secrets (set with `wrangler secret put <NAME>`, never committed):
+#   ADMIN_USERNAME       the publisher's login name
+#   ADMIN_PASSWORD_HASH  output of `python3 tools/hash-password.py`
+#   SESSION_SECRET       random string, e.g. `openssl rand -base64 48`
+#   GITHUB_TOKEN         fine-grained PAT, this repo only, Contents: read & write
+
+name = "tavfiqnashr-admin"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+GITHUB_OWNER = "Usmon-Mukhammad"
+GITHUB_REPO  = "tavfiqnashr"
+GITHUB_BRANCH = "main"
+SITE_ORIGIN = "https://tavfiqnashr.uz"
+SESSION_HOURS = "8"
+
+[[routes]]
+pattern = "tavfiqnashr.uz/api/admin/*"
+zone_name = "tavfiqnashr.uz"

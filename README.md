@@ -70,6 +70,10 @@ blog/ru/              generated — ru listing + articles
 content/blog/uz/      Markdown sources (uz)
 content/blog/ru/      Markdown sources (ru)
 tools/build-blog.py   regenerates the blog from Markdown
+tools/hash-password.py generates the admin password hash
+tools/test-worker.mjs  tests for the admin Worker
+admin/                the publisher's editor page (static)
+worker/               Cloudflare Worker: login + GitHub commits
 tools/make-og-image.py regenerates the social cards
 assets/css/styles.css hand-written CSS, no framework
 assets/js/main.js     mobile menu, sticky header, scroll reveal, back-to-top
@@ -126,6 +130,69 @@ parser is ~40 lines of stdlib in `tools/build-blog.py`, with no dependencies.
 Matching slugs across `uz/` and `ru/` are linked as translations of each other.
 If a slug exists in only one language, the build prints a note and that page's
 language switcher points at the other language's blog index instead.
+
+## Blog admin (publisher login)
+
+The publisher writes posts at **https://tavfiqnashr.uz/admin/** with a username
+and password — no GitHub account. The public site stays static; only
+`/api/admin/*` is dynamic, handled by a Cloudflare Worker.
+
+```
+publisher → /admin/ (static page on Pages)
+          → POST /api/admin/* → Cloudflare Worker
+              · checks username + PBKDF2 password hash
+              · commits content/blog/<lang>/<slug>.md via the GitHub API
+          → Action "Build blog" runs tools/build-blog.py, commits the HTML
+          → Pages redeploys (1–2 minutes)
+```
+
+The GitHub token lives only as a Worker secret and is never sent to the browser.
+
+### One-time setup
+
+1. **Create a fine-grained GitHub token** — github.com/settings/personal-access-tokens
+   - Repository access: **only** `Usmon-Mukhammad/tavfiqnashr`
+   - Permissions: **Contents → Read and write** (nothing else)
+
+2. **Generate the password hash** (the password never leaves your machine):
+
+   ```bash
+   python3 tools/hash-password.py
+   ```
+
+3. **Deploy the Worker and set its secrets:**
+
+   ```bash
+   cd worker
+   npm install --save-dev wrangler
+   npx wrangler deploy
+   npx wrangler secret put ADMIN_USERNAME
+   npx wrangler secret put ADMIN_PASSWORD_HASH   # paste the hash from step 2
+   npx wrangler secret put SESSION_SECRET        # openssl rand -base64 48
+   npx wrangler secret put GITHUB_TOKEN          # the token from step 1
+   ```
+
+4. **Add a rate-limit rule** in Cloudflare (Security → WAF → Rate limiting) on
+   path `/api/admin/login`, e.g. 5 requests per minute per IP. The Worker already
+   delays failed logins, but this is the real brake on guessing.
+
+Non-secret settings (repo owner, branch, session length) are plain `[vars]` in
+`worker/wrangler.toml`.
+
+### Changing the password
+
+Re-run `tools/hash-password.py` and `npx wrangler secret put ADMIN_PASSWORD_HASH`.
+Rotating `SESSION_SECRET` immediately signs out any active session.
+
+### Tests
+
+```bash
+node tools/test-worker.mjs
+```
+
+16 checks covering login, session forgery and expiry, the CSRF header, slug and
+front-matter validation, create/update/delete against a mocked GitHub API, and
+that the token never appears in a response.
 
 ## Sections
 

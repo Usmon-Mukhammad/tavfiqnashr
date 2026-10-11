@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maqola tahrirlash — TAVFIQNASHR</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f3d33">
+<link rel="icon" href="../assets/img/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/styles.css">
+<style>
+  body{background:var(--cream-2)}
+  .admin{width:min(100% - 2rem, 1060px); margin:0 auto; padding:2.2rem 0 4rem}
+  .admin-bar{display:flex; align-items:center; gap:1rem; margin-bottom:1.8rem}
+  .admin-bar h1{font-size:1.6rem; margin:0}
+  .admin-bar .spacer{margin-left:auto}
+  .panel{background:var(--white); border:1px solid var(--line); border-radius:var(--radius);
+         padding:1.8rem; box-shadow:var(--shadow)}
+  .login{max-width:24rem; margin:8vh auto}
+  .field{display:block; margin-bottom:1rem}
+  .field > span{display:block; font-size:.78rem; letter-spacing:.1em; text-transform:uppercase;
+                color:var(--muted); margin-bottom:.35rem}
+  input,textarea,select{
+    width:100%; font:inherit; font-size:.97rem; color:var(--ink);
+    background:var(--cream); border:1px solid var(--line); border-radius:10px;
+    padding:.7rem .85rem;
+  }
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--gold); outline-offset:1px}
+  textarea{min-height:24rem; line-height:1.7; resize:vertical; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.9rem}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
+  .hint{font-size:.8rem; color:var(--muted); margin:.3rem 0 0}
+  .layout{display:grid; grid-template-columns:260px 1fr; gap:1.4rem; align-items:start}
+  .list{padding:1.2rem}
+  .list h2{font-size:.78rem; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0 0 .6rem}
+  .list button{display:block; width:100%; text-align:left; background:none; border:0; cursor:pointer;
+               padding:.5rem .6rem; border-radius:8px; font:inherit; font-size:.92rem; color:var(--ink)}
+  .list button:hover{background:rgba(15,61,51,.07)}
+  .list button[aria-current="true"]{background:var(--green); color:#fff}
+  .tabs{display:flex; gap:.3rem; margin-bottom:.9rem}
+  .tabs button{flex:1; padding:.45rem; border:1px solid var(--line); background:var(--cream);
+               border-radius:8px; cursor:pointer; font:inherit; font-size:.85rem}
+  .tabs button[aria-pressed="true"]{background:var(--green); color:#fff; border-color:var(--green)}
+  .actions{display:flex; gap:.7rem; align-items:center; margin-top:1.4rem; flex-wrap:wrap}
+  .msg{padding:.75rem 1rem; border-radius:10px; font-size:.9rem; margin-bottom:1rem}
+  .msg.err{background:#fdecec; color:#8a1c1c; border:1px solid #f3c6c6}
+  .msg.ok{background:#e9f4ee; color:#145231; border:1px solid #bfe0cd}
+  .danger{background:none; border:1px solid #d9b3b3; color:#8a1c1c; border-radius:999px;
+          padding:.6rem 1.1rem; cursor:pointer; font:inherit; font-size:.88rem}
+  .danger:hover{background:#fdecec}
+  [hidden]{display:none !important}
+  @media (max-width:820px){ .layout{grid-template-columns:1fr} .row{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<!-- Login ------------------------------------------------------------------>
+<section id="login" class="login panel" hidden>
+  <h1 style="font-size:1.5rem;margin:0 0 1.2rem">Tahrirlash paneli</h1>
+  <div id="login-msg"></div>
+  <form id="login-form">
+    <label class="field"><span>Login</span>
+      <input name="username" autocomplete="username" required autofocus></label>
+    <label class="field"><span>Parol</span>
+      <input name="password" type="password" autocomplete="current-password" required></label>
+    <button class="btn btn-lg" style="width:100%" type="submit">Kirish</button>
+  </form>
+</section>
+
+<!-- Editor ----------------------------------------------------------------->
+<main id="app" class="admin" hidden>
+  <div class="admin-bar">
+    <h1>Maqolalar</h1>
+    <span class="spacer"></span>
+    <button class="btn btn-sm" id="new-btn" type="button">+ Yangi maqola</button>
+    <button class="btn btn-sm btn-ghost" id="logout-btn" type="button">Chiqish</button>
+  </div>
+
+  <div class="layout">
+    <aside class="panel list">
+      <div class="tabs">
+        <button type="button" data-lang="uz" aria-pressed="true">O‘zbekcha</button>
+        <button type="button" data-lang="ru" aria-pressed="false">Ruscha</button>
+      </div>
+      <h2>Mavjud maqolalar</h2>
+      <div id="post-list"></div>
+    </aside>
+
+    <section class="panel">
+      <div id="msg"></div>
+      <form id="post-form">
+        <div class="row">
+          <label class="field"><span>Sarlavha *</span><input name="title" required maxlength="200"></label>
+          <label class="field"><span>Sana *</span><input name="date" type="date" required></label>
+        </div>
+        <label class="field"><span>Manzil (slug)</span><input name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*">
+          <p class="hint">Sarlavhadan avtomatik yaratiladi. Mavjud maqolada o‘zgartirib bo‘lmaydi.</p></label>
+        <label class="field"><span>Qisqa tavsif *</span><input name="description" required maxlength="400">
+          <p class="hint">Ro‘yxatdagi kartada va havola ko‘rinishida chiqadi.</p></label>
+        <div class="row">
+          <label class="field"><span>Manba kitob</span><input name="source" maxlength="200"></label>
+          <label class="field"><span>Teg</span><input name="tags" maxlength="60"></label>
+        </div>
+        <label class="field"><span>Matn *</span><textarea name="body" required></textarea>
+          <p class="hint">## Sarlavha · &gt; Iqtibos (keyingi qatorda — Muallif) · - ro‘yxat · **qalin** · *kursiv*</p></label>
+
+        <div class="actions">
+          <button class="btn btn-lg" type="submit" id="save-btn">Saqlash</button>
+          <button class="danger" type="button" id="delete-btn" hidden>O‘chirish</button>
+          <span class="hint" id="state"></span>
+        </div>
+      </form>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var API = "/api/admin";
+  var lang = "uz", current = null, lists = { uz: [], ru: [] };
+
+  var $ = function (s) { return document.querySelector(s); };
+  var form = $("#post-form");
+
+  function api(path, opts) {
+    opts = opts || {};
+    return fetch(API + path, {
+      method: opts.method || "GET",
+      credentials: "same-origin",
+      headers: Object.assign(
+        opts.body ? { "content-type": "application/json" } : {},
+        opts.method && opts.method !== "GET" ? { "x-requested-with": "tn-admin" } : {}),
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (d) {
+        if (!r.ok) throw new Error(d.error || ("Xatolik: " + r.status));
+        return d;
+      });
+    });
+  }
+
+  function note(where, text, kind) {
+    var el = $(where);
+    el.innerHTML = text ? '<div class="msg ' + kind + '">' + text.replace(/</g, "&lt;") + "</div>" : "";
+  }
+
+  var MAP = { а:"a",б:"b",в:"v",г:"g",д:"d",е:"e",ё:"yo",ж:"j",з:"z",и:"i",й:"y",к:"k",л:"l",м:"m",
+    н:"n",о:"o",п:"p",р:"r",с:"s",т:"t",у:"u",ф:"f",х:"h",ц:"ts",ч:"ch",ш:"sh",щ:"sch",ъ:"",ы:"y",
+    ь:"",э:"e",ю:"yu",я:"ya" };
+  function slugify(s) {
+    return s.toLowerCase().replace(/[‘’'ʻʼ`]/g, "")
+      .replace(/[а-яё]/g, function (c) { return MAP[c] != null ? MAP[c] : c; })
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+  }
+
+  function renderList() {
+    var box = $("#post-list");
+    box.innerHTML = "";
+    if (!lists[lang].length) {
+      box.innerHTML = '<p class="hint">Hali maqola yo‘q.</p>';
+      return;
+    }
+    lists[lang].forEach(function (slug) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = slug;
+      b.setAttribute("aria-current", String(current === slug));
+      b.onclick = function () { load(slug); };
+      box.appendChild(b);
+    });
+  }
+
+  function refresh() {
+    return api("/posts").then(function (d) { lists = d; renderList(); });
+  }
+
+  function blank() {
+    current = null;
+    form.reset();
+    form.date.value = new Date().toISOString().slice(0, 10);
+    form.slug.readOnly = false;
+    $("#delete-btn").hidden = true;
+    $("#state").textContent = "Yangi maqola (" + (lang === "uz" ? "o‘zbekcha" : "ruscha") + ")";
+    note("#msg", "", "");
+    renderList();
+  }
+
+  function load(slug) {
+    api("/posts/" + lang + "/" + slug).then(function (p) {
+      current = slug;
+      form.title.value = p.title || "";
+      form.date.value = p.date || "";
+      form.slug.value = slug;
+      form.slug.readOnly = true;
+      form.description.value = p.description || "";
+      form.source.value = p.source || "";
+      form.tags.value = p.tags || "";
+      form.body.value = p.body || "";
+      $("#delete-btn").hidden = false;
+      $("#state").textContent = "Tahrirlanmoqda: " + slug;
+      note("#msg", "", "");
+      renderList();
+    }).catch(function (e) { note("#msg", e.message, "err"); });
+  }
+
+  form.title.addEventListener("blur", function () {
+    if (!current && !form.slug.value && form.title.value) form.slug.value = slugify(form.title.value);
+  });
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var slug = form.slug.value || slugify(form.title.value);
+    if (!slug) { note("#msg", "Manzil (slug) bo‘sh bo‘lmasin.", "err"); return; }
+    var btn = $("#save-btn");
+    btn.disabled = true;
+    note("#msg", "", "");
+    api("/posts/" + lang + "/" + slug, {
+      method: "PUT",
+      body: {
+        title: form.title.value.trim(), date: form.date.value,
+        description: form.description.value.trim(), source: form.source.value.trim(),
+        tags: form.tags.value.trim(), body: form.body.value,
+      },
+    }).then(function () {
+      current = slug;
+      form.slug.readOnly = true;
+      $("#delete-btn").hidden = false;
+      note("#msg", "Saqlandi. Sayt 1–2 daqiqada yangilanadi.", "ok");
+      return refresh();
+    }).catch(function (e) {
+      note("#msg", e.message, "err");
+    }).then(function () { btn.disabled = false; });
+  });
+
+  $("#delete-btn").addEventListener("click", function () {
+    if (!current) return;
+    if (!confirm("“" + current + "” maqolasi o‘chirilsinmi? Buni ortga qaytarib bo‘lmaydi.")) return;
+    api("/posts/" + lang + "/" + current, { method: "DELETE" }).then(function () {
+      note("#msg", "O‘chirildi.", "ok");
+      blank();
+      return refresh();
+    }).catch(function (e) { note("#msg", e.message, "err"); });
+  });
+
+  $("#new-btn").addEventListener("click", blank);
+
+  document.querySelectorAll(".tabs button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      lang = b.dataset.lang;
+      document.querySelectorAll(".tabs button").forEach(function (x) {
+        x.setAttribute("aria-pressed", String(x === b));
+      });
+      blank();
+    });
+  });
+
+  $("#logout-btn").addEventListener("click", function () {
+    api("/logout", { method: "POST" }).then(function () { location.reload(); });
+  });
+
+  $("#login-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var f = e.target;
+    note("#login-msg", "", "");
+    api("/login", { method: "POST", body: { username: f.username.value, password: f.password.value } })
+      .then(start)
+      .catch(function (err) { note("#login-msg", err.message, "err"); });
+  });
+
+  function start() {
+    $("#login").hidden = true;
+    $("#app").hidden = false;
+    blank();
+    refresh().catch(function (e) { note("#msg", e.message, "err"); });
+  }
+
+  api("/session").then(start).catch(function () { $("#login").hidden = false; });
+})();
+</script>
+</body>
+</html>
