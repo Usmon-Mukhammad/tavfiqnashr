@@ -75,15 +75,13 @@
      - Once revealed, the reveal classes are removed so each element gets its
        own hover transitions back. */
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var targets = document.querySelectorAll(
-    '.section-head, .about-text, .about-figure, .release-media, .release-body, ' +
-    '.cards > .card, .series li, .quotes blockquote, .contact-lead, .ccard, ' +
-    '.book-body, .see-all-foot'
-  );
+  // Image-led blocks only. Text people are reading (headings, lists, quotes,
+  // contact details) stays put — it used to be 21 moving elements per page.
+  var targets = document.querySelectorAll('.cards > .card, .release-media, .release-body');
 
   if (!reduce && 'IntersectionObserver' in window) {
     var finish = function (el) {
-      el.classList.remove('reveal', 'in', 'from-left', 'from-right');
+      el.classList.remove('reveal', 'in');
       el.style.removeProperty('--rd');
     };
     var io = new IntersectionObserver(function (entries) {
@@ -98,7 +96,7 @@
           finish(el);
         });
         // Safety net if transitionend never fires (tab hidden, etc.).
-        setTimeout(function () { finish(el); }, 1600);
+        setTimeout(function () { finish(el); }, 1200);
       });
     }, { rootMargin: '0px 0px -6% 0px', threshold: 0.1 });
 
@@ -110,9 +108,7 @@
       });
       var i = Math.min(sibs.indexOf(el), 4);
       el.classList.add('reveal');
-      if (el.classList.contains('release-media')) el.classList.add('from-left');
-      if (el.classList.contains('release-body')) el.classList.add('from-right');
-      el.style.setProperty('--rd', (i > 0 ? i * 90 : 0) + 'ms');
+      el.style.setProperty('--rd', (i > 0 ? i * 70 : 0) + 'ms');
       io.observe(el);
     });
   }

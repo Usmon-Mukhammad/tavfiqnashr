@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../assets/css/styles.css?v=b9528f2625">
+<link rel="stylesheet" href="../assets/css/styles.css?v=c103c76915">
 <style>
   body{background:var(--cream-2)}
 
@@ -164,6 +164,8 @@
     padding:.7rem .85rem;
   }
   input:focus,textarea:focus,select:focus{outline:2px solid var(--gold); outline-offset:1px}
+  input,textarea,select{transition:border-color .2s ease, box-shadow .2s ease, background-color .2s ease}
+  input:focus,textarea:focus,select:focus{box-shadow:0 0 0 4px rgba(184,145,47,.14)}
   textarea{min-height:24rem; line-height:1.7; resize:vertical; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.9rem}
   .row{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
   .hint{font-size:.8rem; color:var(--muted); margin:.3rem 0 0}

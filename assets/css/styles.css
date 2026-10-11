@@ -62,25 +62,51 @@ p{margin:0 0 1em}
 
 :focus-visible{outline:2px solid var(--gold); outline-offset:3px; border-radius:4px}
 
-/* ---------- Buttons ---------- */
+/* ---------- Buttons ----------
+   Buttons answer the pointer: a clearly lighter green, a lift with a soft
+   glow, a light sheen crossing the face, and a press-down on click. The old
+   hover shifted the colour by only 1.43:1 and the outline button by 1.11:1,
+   so it read as "no animation". #24725f is a 2.10:1 shift and keeps white
+   text at 5.76:1. */
 .btn{
+  position:relative; overflow:hidden; isolation:isolate;
   display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
   background:var(--green); color:#fff;
   padding:.72rem 1.5rem; border-radius:999px;
   font-size:.94rem; font-weight:500; letter-spacing:.01em;
   border:1px solid var(--green);
-  transition:transform .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease;
+  transition:transform .22s cubic-bezier(.2,.7,.2,1), background-color .22s ease,
+             border-color .22s ease, box-shadow .25s ease, color .22s ease;
   white-space:nowrap;
 }
-.btn:hover{background:var(--green-soft); border-color:var(--green-soft); color:#fff}
-@media (hover:hover){ .btn:hover{transform:translateY(-2px); box-shadow:var(--shadow)} }
-.btn:active{transform:translateY(0) scale(.98); box-shadow:none; transition-duration:.08s}
+/* Sheen: sits above the button's own background but below its label. */
+.btn:not(.btn-ghost)::before{
+  content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:linear-gradient(105deg, transparent 32%, rgba(255,255,255,.26) 50%, transparent 68%);
+  transform:translateX(-115%);
+}
+.btn:hover{background:#24725f; border-color:#24725f; color:#fff}
+@media (hover:hover){
+  .btn:hover{transform:translateY(-3px); box-shadow:0 12px 26px -12px rgba(15,61,51,.6)}
+  .btn:not(.btn-ghost):hover::before{transform:translateX(115%); transition:transform .75s ease}
+}
+.btn:active{transform:translateY(0) scale(.97); box-shadow:none; transition-duration:.08s}
+.btn:focus-visible{outline:none; box-shadow:0 0 0 3px var(--cream), 0 0 0 5px var(--gold)}
+
 .btn-sm{padding:.5rem 1.05rem; font-size:.85rem}
 .btn-lg{padding:.9rem 1.9rem; font-size:1rem}
-.btn-ghost{background:transparent; color:var(--green); border-color:var(--line)}
-.btn-ghost:hover{background:rgba(15,61,51,.06); color:var(--green); border-color:var(--green)}
+
+/* Outline button fills on hover — an unmistakable state change. */
+.btn-ghost{background:transparent; color:var(--green); border-color:rgba(15,61,51,.28)}
+.btn-ghost:hover{background:var(--green); color:#fff; border-color:var(--green)}
+@media (hover:hover){ .btn-ghost:hover{box-shadow:0 12px 26px -14px rgba(15,61,51,.55)} }
+
 .btn-gold{background:var(--gold); border-color:var(--gold); color:#20180a}
 .btn-gold:hover{background:var(--gold-light); border-color:var(--gold-light); color:#20180a}
+@media (hover:hover){ .btn-gold:hover{box-shadow:0 12px 26px -12px rgba(184,145,47,.75)} }
+
+/* Every text link eases its colour change instead of snapping. */
+a{transition:color .2s ease}
 
 /* ---------- Header ---------- */
 .site-header{
@@ -345,45 +371,35 @@ p{margin:0 0 1em}
 .to-top:hover{background:var(--green-soft); color:#fff}
 
 /* ---------- Reveal on scroll ---------- */
-/* Only elements that start BELOW the fold get .reveal (see main.js), so first
-   paint is never blank. The transition lives on .reveal.in alone and both
-   classes are removed when it ends, so an element's own hover transitions are
-   never overridden. --rd is the stagger among siblings, not page order. */
-.reveal{opacity:0; transform:translateY(20px)}
-.reveal.from-left{transform:translateX(-28px)}
-.reveal.from-right{transform:translateX(28px)}
+/* Scroll-in is reserved for the image-led blocks (book cards and the
+   featured release). Text people are reading — lists, quotes, contact
+   details, section headings — no longer moves under them: 21 elements used
+   to slide in while scrolling the homepage. Short distance, quick, and handed
+   back to the element's own transitions when done (see main.js). */
+.reveal{opacity:0; transform:translateY(14px)}
 .reveal.in{
   opacity:1; transform:none;
-  transition:opacity .65s ease var(--rd,0ms), transform .75s cubic-bezier(.2,.7,.2,1) var(--rd,0ms);
+  transition:opacity .45s ease var(--rd,0ms), transform .5s cubic-bezier(.2,.7,.2,1) var(--rd,0ms);
 }
 
-/* ---------- Load-in, above the fold ----------
-   The hero and the top of a book page are on screen at load, so they use a
-   one-shot CSS animation rather than the scroll observer. */
-/* "from"-only keyframes on purpose: the animation then ends on the element's
-   OWN opacity/transform. A `to{opacity:1}` plus fill-mode `both` pinned the
-   hero ornament at full strength — 7x its intended 0.14. */
-@keyframes riseIn{from{opacity:0; transform:translateY(16px)}}
+/* ---------- Load-in ----------
+   Nobody should wait for what they came to read or click. Buttons, the hero
+   stats and everything on a book page except its cover are on screen
+   immediately: "Buyurtma berish" used to be the last thing to appear (1.04s)
+   and the hero took 1.6s to settle.
+
+   "from"-only keyframes, and fill-mode `backwards`, so an animation ends on
+   the element's own values and then lets go of them entirely. (A `to` state
+   held with `both` once pinned the hero pattern at 7x its opacity.) */
+@keyframes riseIn{from{opacity:0; transform:translateY(10px)}}
 @keyframes fadeIn{from{opacity:0}}
-@keyframes coverIn{from{opacity:0; transform:translateY(18px) scale(.98)}}
+@keyframes coverIn{from{opacity:0; transform:scale(.985)}}
 
-.hero .eyebrow     {animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both .05s}
-.hero h1           {animation:riseIn .8s cubic-bezier(.2,.7,.2,1) both .15s}
-.hero .lead        {animation:riseIn .8s cubic-bezier(.2,.7,.2,1) both .28s}
-.hero .hero-actions{animation:riseIn .8s cubic-bezier(.2,.7,.2,1) both .4s}
-.hero .stats       {animation:fadeIn 1s ease both .6s}
-.hero .ornament    {animation:fadeIn 1.6s ease both}
-
-.book-cover{animation:coverIn .8s cubic-bezier(.2,.7,.2,1) both .05s}
-.book-info > *{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both}
-.book-info > :nth-child(2){animation-delay:.10s}
-.book-info > :nth-child(3){animation-delay:.16s}
-.book-info > :nth-child(4){animation-delay:.22s}
-.book-info > :nth-child(5){animation-delay:.28s}
-.book-info > :nth-child(n+6){animation-delay:.34s}
-.page-head .wrap > *{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both}
-.page-head .wrap > :nth-child(2){animation-delay:.08s}
-.page-head .wrap > :nth-child(3){animation-delay:.16s}
+.hero .eyebrow,
+.hero h1,
+.hero .lead{animation:riseIn .5s cubic-bezier(.2,.7,.2,1) backwards}
+.hero .ornament{animation:fadeIn 1s ease backwards}
+.book-cover{animation:coverIn .45s ease backwards}
 
 /* Lazy covers fade in when they arrive instead of popping. Scoped to .js so
    images can never be stuck invisible if the script does not run. */
@@ -392,7 +408,27 @@ p{margin:0 0 1em}
 :where(.js img[loading="lazy"]){transition:opacity .5s ease}
 .js img[loading="lazy"]:not(.is-loaded){opacity:0}
 
-/* ---------- Small affordances ---------- */
+/* ---------- Small affordances ----------
+   Everything here reacts to the pointer and only to the pointer. */
+
+/* Book cards: the title picks up the brand green as the card lifts. */
+@media (hover:hover){ .card:hover h3 a{color:var(--green)} }
+.card h3 a{transition:color .25s ease}
+
+/* Contact cards are links but had no sign of it on desktop: an arrow slides
+   in on hover. (Mobile shows a fixed arrow; that rule comes later and wins.) */
+.ccard{position:relative}
+.ccard::after{
+  content:"→"; position:absolute; right:1.25rem; top:1.25rem;
+  color:var(--gold-light); opacity:0; transform:translateX(-8px);
+  transition:opacity .25s ease, transform .25s ease;
+}
+@media (hover:hover){ .ccard:hover::after{opacity:1; transform:none} }
+
+/* Back to top nudges upward, the direction it will take you. */
+@media (hover:hover){ .to-top.show:hover{transform:translateY(-4px)} }
+.to-top:active{transform:scale(.94)}
+
 @media (hover:hover) and (min-width:761px){
   .nav a:not(.btn){position:relative}
   .nav a:not(.btn)::after{
@@ -402,8 +438,7 @@ p{margin:0 0 1em}
   }
   .nav a:not(.btn):hover::after{transform:scaleX(1)}
 }
-.release-media img{transition:transform .6s cubic-bezier(.2,.7,.2,1), opacity .5s ease}
-@media (hover:hover){ .release-media:hover img{transform:scale(1.02)} }
+.release-media img{transition:opacity .5s ease}
 
 /* ---------- Catalogue page head ---------- */
 .page-head{padding-bottom:0}
