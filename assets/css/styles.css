@@ -152,10 +152,12 @@ p{margin:0 0 1em}
   text-align:center;
 }
 .ornament{
-  position:absolute; inset:0; pointer-events:none; opacity:.14;
+  position:absolute; inset:0; pointer-events:none; opacity:.11;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%230f3d33' stroke-width='1'%3E%3Cpath d='M40 4 62 18v28L40 60 18 46V18z'/%3E%3Cpath d='M40 16 52 23v14l-12 7-12-7V23z'/%3E%3Cpath d='M0 40h18M62 40h18M40 60v20M40 0v4'/%3E%3C/g%3E%3C/svg%3E");
-  mask-image:radial-gradient(70% 60% at 50% 40%, #000, transparent 78%);
-  -webkit-mask-image:radial-gradient(70% 60% at 50% 40%, #000, transparent 78%);
+  /* Clear behind the heading and paragraph, visible toward the edges: the
+     pattern frames the text instead of running through it. */
+  mask-image:radial-gradient(58% 62% at 50% 42%, transparent 38%, #000 100%);
+  -webkit-mask-image:radial-gradient(58% 62% at 50% 42%, transparent 38%, #000 100%);
 }
 .hero-inner{position:relative}
 .eyebrow{
@@ -358,9 +360,12 @@ p{margin:0 0 1em}
 /* ---------- Load-in, above the fold ----------
    The hero and the top of a book page are on screen at load, so they use a
    one-shot CSS animation rather than the scroll observer. */
-@keyframes riseIn{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
-@keyframes fadeIn{from{opacity:0} to{opacity:1}}
-@keyframes coverIn{from{opacity:0; transform:translateY(18px) scale(.98)} to{opacity:1; transform:none}}
+/* "from"-only keyframes on purpose: the animation then ends on the element's
+   OWN opacity/transform. A `to{opacity:1}` plus fill-mode `both` pinned the
+   hero ornament at full strength — 7x its intended 0.14. */
+@keyframes riseIn{from{opacity:0; transform:translateY(16px)}}
+@keyframes fadeIn{from{opacity:0}}
+@keyframes coverIn{from{opacity:0; transform:translateY(18px) scale(.98)}}
 
 .hero .eyebrow     {animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both .05s}
 .hero h1           {animation:riseIn .8s cubic-bezier(.2,.7,.2,1) both .15s}
@@ -580,7 +585,7 @@ p{margin:0 0 1em}
   .nav.open a:nth-child(4){animation-delay:.11s}
   .nav.open a:nth-child(5){animation-delay:.14s}
   .nav.open a:nth-child(6){animation-delay:.17s}
-  @keyframes navIn{from{opacity:0; transform:translateY(-6px)} to{opacity:1; transform:none}}
+  @keyframes navIn{from{opacity:0; transform:translateY(-6px)}}
 
   body.nav-locked{overflow:hidden}
 
@@ -591,7 +596,7 @@ p{margin:0 0 1em}
   .lead{font-size:1rem; line-height:1.65; margin-bottom:1.9rem}
   .hero-actions{flex-direction:column; gap:.7rem}
   .hero-actions .btn{width:100%}
-  .ornament{opacity:.1; background-size:64px 64px}
+  .ornament{opacity:.09; background-size:64px 64px}
 
   /* Stats as an even, divided row */
   .stats{
