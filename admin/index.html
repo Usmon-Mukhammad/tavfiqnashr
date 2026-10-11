@@ -13,6 +13,85 @@
 <link rel="stylesheet" href="../assets/css/styles.css">
 <style>
   body{background:var(--cream-2)}
+
+  /* ---------- Login screen ----------
+     Full-bleed brand surface rather than a bare form: the same deep green,
+     gold ornament and serif wordmark the public site uses. */
+  .login-screen{
+    position:fixed; inset:0; z-index:10; overflow:auto;
+    display:grid; place-items:center; padding:2rem 1rem;
+    background:linear-gradient(160deg, var(--green) 0%, var(--green-deep) 100%);
+  }
+  .login-orn{
+    position:absolute; inset:0; pointer-events:none; opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='78' height='78' viewBox='0 0 78 78'%3E%3Cg fill='none' stroke='%23c9a34a' stroke-width='1' stroke-opacity='.33'%3E%3Cpath d='M39 3 64 16v26L39 55 14 42V16z'/%3E%3Cpath d='M39 15 52 22v14l-13 7-13-7V22z'/%3E%3C/g%3E%3C/svg%3E");
+    mask-image:radial-gradient(70% 60% at 50% 45%, transparent 10%, #000 85%);
+    -webkit-mask-image:radial-gradient(70% 60% at 50% 45%, transparent 10%, #000 85%);
+  }
+  .login-glow{
+    position:absolute; left:50%; top:42%; width:min(80vw,680px); aspect-ratio:1;
+    transform:translate(-50%,-50%); pointer-events:none;
+    background:radial-gradient(circle, rgba(201,163,74,.17), transparent 62%);
+  }
+
+  .login-card{
+    position:relative; width:min(100%, 25rem);
+    background:var(--cream); border:1px solid rgba(201,163,74,.35);
+    border-radius:22px; padding:2.4rem 2.1rem 1.8rem; text-align:center;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.04);
+    animation:cardIn .5s cubic-bezier(.2,.8,.3,1) both;
+  }
+  @keyframes cardIn{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
+
+  .login-logo{
+    display:inline-grid; place-items:center; width:92px; height:92px;
+    border-radius:50%; margin-bottom:1.1rem;
+    background:var(--cream); border:1px solid rgba(201,163,74,.55);
+    box-shadow:0 0 0 6px rgba(201,163,74,.10);
+  }
+  .login-logo img{width:76px; height:76px; border-radius:50%; object-fit:cover}
+
+  .login-brand{
+    font-family:var(--serif); font-size:1.45rem; letter-spacing:.12em;
+    color:var(--ink); margin:0; line-height:1;
+  }
+  .login-kicker{
+    font-size:.64rem; letter-spacing:.3em; text-transform:uppercase;
+    color:var(--gold); margin:.45rem 0 0;
+  }
+  .login-card h1{
+    font-size:1.5rem; margin:1.5rem 0 .3rem;
+    padding-top:1.3rem; border-top:1px solid var(--line);
+  }
+  .login-sub{font-size:.88rem; color:var(--muted); margin:0 0 1.5rem}
+
+  .login-card .field{text-align:left}
+  .login-card input{background:var(--white)}
+  .login-card input:focus{border-color:var(--gold)}
+
+  .pw{position:relative; display:block}
+  .pw input{padding-right:5.6rem}
+  .pw-toggle{
+    position:absolute; right:.4rem; top:50%; transform:translateY(-50%);
+    background:none; border:0; cursor:pointer; padding:.35rem .6rem;
+    font:inherit; font-size:.76rem; letter-spacing:.04em;
+    color:var(--muted); border-radius:8px;
+  }
+  .pw-toggle:hover{color:var(--green); background:rgba(15,61,51,.06)}
+
+  .login-go{width:100%; margin-top:.4rem}
+  .login-go[disabled]{opacity:.6; cursor:progress}
+
+  .login-foot{margin:1.4rem 0 0; font-size:.82rem}
+  .login-foot a{color:var(--muted)}
+  .login-foot a:hover{color:var(--green)}
+
+  @media (max-width:420px){
+    .login-card{padding:2rem 1.4rem 1.5rem; border-radius:18px}
+    .login-logo{width:80px; height:80px}
+    .login-logo img{width:66px; height:66px}
+  }
+  @media (prefers-reduced-motion:reduce){ .login-card{animation:none} }
   .admin{width:min(100% - 2rem, 1060px); margin:0 auto; padding:2.2rem 0 4rem}
   .admin-bar{display:flex; align-items:center; gap:1rem; margin-bottom:1.8rem}
   .admin-bar h1{font-size:1.6rem; margin:0}
@@ -57,16 +136,37 @@
 <body>
 
 <!-- Login ------------------------------------------------------------------>
-<section id="login" class="login panel" hidden>
-  <h1 style="font-size:1.5rem;margin:0 0 1.2rem">Tahrirlash paneli</h1>
-  <div id="login-msg"></div>
-  <form id="login-form">
-    <label class="field"><span>Login</span>
-      <input name="username" autocomplete="username" required autofocus></label>
-    <label class="field"><span>Parol</span>
-      <input name="password" type="password" autocomplete="current-password" required></label>
-    <button class="btn btn-lg" style="width:100%" type="submit">Kirish</button>
-  </form>
+<section id="login" class="login-screen" hidden>
+  <div class="login-orn" aria-hidden="true"></div>
+  <div class="login-glow" aria-hidden="true"></div>
+
+  <div class="login-card">
+    <span class="login-logo"><img src="../assets/img/logo.jpg" alt="" width="76" height="76"></span>
+    <p class="login-brand">TAVFIQNASHR</p>
+    <p class="login-kicker">Nashriyoti</p>
+
+    <h1>Tahrirlash paneli</h1>
+    <p class="login-sub">Maqolalarni qo‘shish va tahrirlash uchun tizimga kiring.</p>
+
+    <div id="login-msg"></div>
+
+    <form id="login-form">
+      <label class="field"><span>Login</span>
+        <input name="username" autocomplete="username" required autofocus
+               spellcheck="false" autocapitalize="none"></label>
+
+      <label class="field"><span>Parol</span>
+        <span class="pw">
+          <input name="password" type="password" autocomplete="current-password" required>
+          <button class="pw-toggle" type="button" aria-pressed="false"
+                  aria-label="Parolni ko‘rsatish">Ko‘rsatish</button>
+        </span></label>
+
+      <button class="btn btn-lg login-go" type="submit">Kirish</button>
+    </form>
+
+    <p class="login-foot"><a href="../">← Saytga qaytish</a></p>
+  </div>
 </section>
 
 <!-- Editor ----------------------------------------------------------------->
@@ -261,13 +361,32 @@
     api("/logout", { method: "POST" }).then(function () { location.reload(); });
   });
 
+  var pwToggle = document.querySelector(".pw-toggle");
+  pwToggle.addEventListener("click", function () {
+    var input = document.querySelector('.pw input');
+    var show = input.type === "password";
+    input.type = show ? "text" : "password";
+    pwToggle.textContent = show ? "Yashirish" : "Ko‘rsatish";
+    pwToggle.setAttribute("aria-pressed", String(show));
+    pwToggle.setAttribute("aria-label", show ? "Parolni yashirish" : "Parolni ko‘rsatish");
+    input.focus();
+  });
+
   $("#login-form").addEventListener("submit", function (e) {
     e.preventDefault();
-    var f = e.target;
+    var f = e.target, go = $(".login-go");
     note("#login-msg", "", "");
+    go.disabled = true;
+    go.textContent = "Kirilmoqda…";
     api("/login", { method: "POST", body: { username: f.username.value, password: f.password.value } })
       .then(start)
-      .catch(function (err) { note("#login-msg", err.message, "err"); });
+      .catch(function (err) {
+        note("#login-msg", err.message, "err");
+        go.disabled = false;
+        go.textContent = "Kirish";
+        f.password.value = "";
+        f.password.focus();
+      });
   });
 
   function start() {
