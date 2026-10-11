@@ -78,7 +78,7 @@
   var targets = document.querySelectorAll(
     '.section-head, .about-text, .about-figure, .release-media, .release-body, ' +
     '.cards > .card, .series li, .quotes blockquote, .contact-lead, .ccard, ' +
-    '.book-body, .books-more'
+    '.book-body, .see-all-foot'
   );
 
   if (!reduce && 'IntersectionObserver' in window) {
