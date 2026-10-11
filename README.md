@@ -65,11 +65,12 @@ starts the same server from the editor's preview pane.)
 ```
 index.html            Uzbek page, all sections
 ru.html               Russian page, same structure
-blog/                 generated — uz listing + articles
-blog/ru/              generated — ru listing + articles
-content/blog/uz/      Markdown sources (uz)
-content/blog/ru/      Markdown sources (ru)
-tools/build-blog.py   regenerates the blog from Markdown
+kitoblar/             generated — uz catalogue + book pages
+kitoblar/ru/          generated — ru catalogue + book pages
+content/books/uz/     Markdown sources (uz)
+content/books/ru/     Markdown sources (ru)
+assets/img/books/     book covers (uploaded via the admin)
+tools/build-books.py  regenerates the catalogue from Markdown
 tools/hash-password.py generates the admin password hash
 tools/test-worker.mjs  tests for the admin Worker
 admin/                the publisher's editor page (static)
@@ -80,109 +81,99 @@ assets/js/main.js     mobile menu, sticky header, scroll reveal, back-to-top
 assets/img/           artwork pulled from the Telegram channel
 ```
 
-## Blog
+## Books
 
-Articles are written as Markdown and compiled to static HTML — there is still no
-build step at deploy time, the HTML is committed.
+The catalogue is the part the publisher maintains. Books are written as
+Markdown and compiled to committed HTML, so Pages still serves a static site.
 
 ```bash
-python3 tools/build-blog.py
+python3 tools/build-books.py
 ```
 
-That reads `content/blog/<lang>/<slug>.md` and writes:
+Reads `content/books/<lang>/<slug>.md` and writes:
 
 | Output | URL |
 | --- | --- |
-| `blog/index.html` | `/blog/` |
-| `blog/<slug>.html` | `/blog/<slug>.html` |
-| `blog/ru/index.html` | `/blog/ru/` |
-| `blog/ru/<slug>.html` | `/blog/ru/<slug>.html` |
+| `kitoblar/index.html` | `/kitoblar/` |
+| `kitoblar/<slug>.html` | `/kitoblar/<slug>.html` |
+| `kitoblar/ru/index.html` | `/kitoblar/ru/` |
+| `kitoblar/ru/<slug>.html` | `/kitoblar/ru/<slug>.html` |
 
-It also rewrites the "latest articles" teaser on both homepages, between the
-`<!-- BLOG:START -->` / `<!-- BLOG:END -->` markers. **Do not hand-edit anything
-inside those markers or under `blog/`** — it is overwritten on the next run. The
-command is idempotent: run it after any `.md` change and commit the result.
+It also rewrites two blocks on each homepage: the **Kitoblar** cards
+(`BOOKS:START` / `BOOKS:END`, newest three plus an "all books" link) and the
+featured release (`FEATURED:START` / `FEATURED:END`). **Nothing inside those
+markers or under `kitoblar/` should be hand-edited** — it is overwritten on the
+next run. The command is idempotent.
 
-### Adding a post
-
-Create `content/blog/uz/<slug>.md` (and the same `<slug>.md` under `ru/` for the
-translation), then run the build. Front matter is `key: value` lines ended by a
-blank line:
+### Front matter
 
 ```
-title: Tasavvuf nima? Mashhur ta'riflar
-date: 2026-09-14
-description: One sentence, used for the listing card and og:description.
-source: "Tasavvuf bilan tanishuv" — Abdulvaliy Abdussalom
-tags: Tasavvuf
+title: Daloilul xoyrot
+author: Muhammad ibn Jazuliy
+date: 2026-09-20
+description: One sentence, used on the card and as og:description.
+image: daloilul-xoyrot.jpg
+pages: 236 bet
+cover: Qattiq muqova
+language: Arabiy, asl holida
+price: 60 000 so'm
+tag: To'plam · 5 kitob
+quote: A short line shown on the card.
+featured: yes
 
-Body starts here.
+The long description, in Markdown.
 ```
 
-`title`, `date` and `description` are required; `source` and `tags` are optional.
-Posts are ordered newest first by `date`.
+`title`, `author`, `date`, `description` and `image` are required; the rest are
+optional and simply omitted when blank. Covers live in `assets/img/books/`, and
+the build **fails** if a book references one that is missing — better than
+shipping a broken image.
 
-Supported Markdown: `##`/`###` headings, paragraphs, `>` blockquotes (a line
-starting with an em dash becomes the attribution), `-` and `1.` lists, `---`
-rules, `**bold**`, `*italic*`, `[links](url)`. That subset is deliberate — the
-parser is ~40 lines of stdlib in `tools/build-blog.py`, with no dependencies.
+Books are ordered newest first. The featured release is the newest book marked
+`featured: yes`, falling back to the newest book overall.
 
-Matching slugs across `uz/` and `ru/` are linked as translations of each other.
-If a slug exists in only one language, the build prints a note and that page's
-language switcher points at the other language's blog index instead.
+## Admin (publisher login)
 
-## Blog admin (publisher login)
-
-The publisher writes posts at **https://tavfiqnashr.uz/admin/** with a username
-and password — no GitHub account. The public site stays static; only
-`/api/admin/*` is dynamic, handled by a Cloudflare Worker.
+The publisher manages books at **https://tavfiqnashr.uz/admin/** with a username
+and password — no GitHub account. The site stays static; only `/api/admin/*` is
+dynamic, served by a Cloudflare Worker.
 
 ```
 publisher → /admin/ (static page on Pages)
           → POST /api/admin/* → Cloudflare Worker
               · checks username + PBKDF2 password hash
-              · commits content/blog/<lang>/<slug>.md via the GitHub API
-          → Action "Build blog" runs tools/build-blog.py, commits the HTML
+              · commits content/books/<lang>/<slug>.md
+              · commits covers to assets/img/books/
+          → Action "Build books" runs tools/build-books.py, commits the HTML
           → Pages redeploys (1–2 minutes)
 ```
 
-The GitHub token lives only as a Worker secret and is never sent to the browser.
+Cover images are uploaded in the editor, capped at 2MB, and the file name is
+slugified server-side. The GitHub token lives only as a Worker secret.
 
 ### One-time setup
 
-1. **Create a fine-grained GitHub token** — github.com/settings/personal-access-tokens
-   - Repository access: **only** `Usmon-Mukhammad/tavfiqnashr`
-   - Permissions: **Contents → Read and write** (nothing else)
-
-2. **Generate the password hash** (the password never leaves your machine):
-
-   ```bash
-   python3 tools/hash-password.py
-   ```
-
-3. **Deploy the Worker and set its secrets:**
+1. **Fine-grained GitHub token** — repository access limited to
+   `Usmon-Mukhammad/tavfiqnashr`, permission **Contents: Read and write**.
+2. **Password:** `python3 tools/gen-admin-password.py` writes a generated
+   password to `worker/.admin-password.txt` and prints only its hash.
+3. **Deploy and set secrets:**
 
    ```bash
    cd worker
    npm install --save-dev wrangler
    npx wrangler deploy
    npx wrangler secret put ADMIN_USERNAME
-   npx wrangler secret put ADMIN_PASSWORD_HASH   # paste the hash from step 2
-   npx wrangler secret put SESSION_SECRET        # openssl rand -base64 48
-   npx wrangler secret put GITHUB_TOKEN          # the token from step 1
+   npx wrangler secret put ADMIN_PASSWORD_HASH
+   npx wrangler secret put SESSION_SECRET
+   npx wrangler secret put GITHUB_TOKEN
    ```
 
-4. **Add a rate-limit rule** in Cloudflare (Security → WAF → Rate limiting) on
-   path `/api/admin/login`, e.g. 5 requests per minute per IP. The Worker already
-   delays failed logins, but this is the real brake on guessing.
+4. **Rate-limit rule** in Cloudflare (Security → WAF → Rate limiting) on
+   `/api/admin/login`, e.g. 5 requests per minute per IP.
 
-Non-secret settings (repo owner, branch, session length) are plain `[vars]` in
-`worker/wrangler.toml`.
-
-### Changing the password
-
-Re-run `tools/hash-password.py` and `npx wrangler secret put ADMIN_PASSWORD_HASH`.
-Rotating `SESSION_SECRET` immediately signs out any active session.
+PBKDF2 is pinned to 100 000 iterations because Workers' WebCrypto rejects more;
+`tools/test-worker.mjs` asserts this so it cannot regress.
 
 ### Tests
 
@@ -190,9 +181,9 @@ Rotating `SESSION_SECRET` immediately signs out any active session.
 node tools/test-worker.mjs
 ```
 
-16 checks covering login, session forgery and expiry, the CSRF header, slug and
-front-matter validation, create/update/delete against a mocked GitHub API, and
-that the token never appears in a response.
+22 checks: login, session forgery and expiry, the CSRF header, slug and front
+matter validation, create/update/delete, cover upload (naming, extension, size
+cap), and that the token never appears in a response.
 
 ## Sections
 
@@ -200,11 +191,10 @@ that the token never appears in a response.
 | --- | --- | --- | --- |
 | Hero | `#top` | `#top` | Tagline, CTAs, stats |
 | About | `#biz-haqimizda` | `#o-nas` | Positioning, four trust points |
-| New release | — | — | Featured: *Daloilul xoyrot* |
-| Books | `#kitoblar` | `#knigi` | Three catalogue cards |
+| New release | — | — | Featured book (generated) |
+| Books | `#kitoblar` | `#knigi` | Newest three books (generated) |
 | Series | `#sittayi` | `#sittai` | The five-book classical Turkic series |
 | Quotes | `#hikmatlar` | `#mudrosti` | Four quotes drawn from published books |
-| Blog teaser | `#maqolalar` | `#stati` | Latest three articles (generated) |
 | Contact | `#aloqa` | `#kontakty` | Telegram channel, phone, contact bot |
 
 Anchors are localised, so the language pill always links to the page root rather
@@ -261,10 +251,8 @@ Telegram's CDN so the site has no external dependencies. One note:
   native speaker before launch.
 - **No Uzbek Cyrillic version**, though part of the audience reads it — one of the
   book covers is set in Cyrillic.
-- **The seed blog posts are compiled from the channel's own published excerpts**
-  and attributed to the source books, but nobody at the publisher has reviewed
-  the selection or the Russian translations of them yet.
-- **Blog posts share the site-wide social card.** Per-article images would need
-  `og:image` support in the front matter.
+- **Book pages share the site-wide social card.** A per-book `og:image` (the
+  cover) would make shared links stronger; the cover is already in the repo.
+- **The Russian book entries are my translations**, not publisher-supplied copy.
 - The fonts load from Google Fonts, so first paint depends on an external request.
   Self-host the two families if the site must work fully offline.

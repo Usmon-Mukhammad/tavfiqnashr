@@ -1,5 +1,5 @@
 /**
- * TAVFIQNASHR blog admin API.
+ * TAVFIQNASHR books admin API.
  *
  * Serves only /api/admin/* . The public site stays static on GitHub Pages;
  * this Worker exists because a static host cannot check a password or hold a
@@ -15,6 +15,8 @@ const COOKIE = "tn_admin";
 const LANGS = new Set(["uz", "ru"]);
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const MAX_BODY = 200 * 1024;
+const MAX_IMAGE = 2 * 1024 * 1024;        // decoded cover size
+const IMAGE_EXT = { jpg: "jpg", jpeg: "jpg", png: "png", webp: "webp" };
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -125,7 +127,8 @@ async function gh(env, path, init = {}) {
   return res;
 }
 
-const contentPath = (lang, slug) => `content/blog/${lang}/${slug}.md`;
+const contentPath = (lang, slug) => `content/books/${lang}/${slug}.md`;
+const coverPath = (name) => `assets/img/books/${name}`;
 
 async function getFile(env, path) {
   const res = await gh(env, `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${path}?ref=${env.GITHUB_BRANCH}`);
@@ -133,6 +136,15 @@ async function getFile(env, path) {
   if (!res.ok) throw new Error(`github get ${path}: ${res.status}`);
   const data = await res.json();
   return { sha: data.sha, text: dec.decode(b64.dec(data.content.replace(/\n/g, ""))) };
+}
+
+/** Sha only — never decodes the body, so it is safe for binary covers (and
+ *  for files over 1MB, where the Contents API omits inline content). */
+async function getSha(env, path) {
+  const res = await gh(env, `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${path}?ref=${env.GITHUB_BRANCH}`);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`github head ${path}: ${res.status}`);
+  return (await res.json()).sha;
 }
 
 async function putFile(env, path, text, message, sha) {
@@ -150,11 +162,17 @@ async function putFile(env, path, text, message, sha) {
 }
 
 // ------------------------------------------------------------- front matter
+const FIELDS = ["title", "author", "date", "description", "image",
+                "price", "pages", "cover", "language", "tag", "quote", "featured"];
+
 function buildMarkdown(p) {
-  const lines = [`title: ${p.title}`, `date: ${p.date}`, `description: ${p.description}`];
-  if (p.source) lines.push(`source: ${p.source}`);
-  if (p.tags) lines.push(`tags: ${p.tags}`);
-  return lines.join("\n") + "\n\n" + String(p.body).replace(/\r\n/g, "\n").trim() + "\n";
+  const lines = [];
+  for (const f of FIELDS) {
+    const v = (p[f] ?? "").toString().trim();
+    if (v) lines.push(`${f}: ${v}`);
+  }
+  const body = String(p.body || "").replace(/\r\n/g, "\n").trim();
+  return lines.join("\n") + "\n\n" + body + "\n";
 }
 
 function parseMarkdown(text) {
@@ -172,10 +190,16 @@ function parseMarkdown(text) {
 function validate(p) {
   const errs = [];
   if (!p.title || p.title.length > 200) errs.push("title is required (max 200 characters)");
+  if (!p.author || p.author.length > 200) errs.push("author is required (max 200 characters)");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(p.date || "")) errs.push("date must be YYYY-MM-DD");
   if (!p.description || p.description.length > 400) errs.push("description is required (max 400 characters)");
-  if (!p.body || !p.body.trim()) errs.push("body is required");
-  for (const f of ["title", "description", "source", "tags"]) {
+  if (!p.image) errs.push("a cover image is required");
+  if (p.image && !/^[a-z0-9][a-z0-9._-]*\.(jpg|png|webp)$/i.test(p.image)) {
+    errs.push("image must be a plain file name ending in .jpg, .png or .webp");
+  }
+  // Front matter is one key per line, so a newline in any of these would
+  // silently corrupt the file the generator reads back.
+  for (const f of FIELDS) {
     if (p[f] && /[\r\n]/.test(p[f])) errs.push(`${f} must be a single line`);
   }
   return errs;
@@ -222,10 +246,10 @@ async function handle(request, env) {
     return json({ error: "missing X-Requested-With" }, 403);
   }
 
-  if (path === "/posts" && request.method === "GET") {
+  if (path === "/books" && request.method === "GET") {
     const out = {};
     for (const lang of LANGS) {
-      const res = await gh(env, `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/content/blog/${lang}?ref=${env.GITHUB_BRANCH}`);
+      const res = await gh(env, `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/content/books/${lang}?ref=${env.GITHUB_BRANCH}`);
       out[lang] = res.ok
         ? (await res.json()).filter((f) => f.name.endsWith(".md")).map((f) => f.name.slice(0, -3)).sort()
         : [];
@@ -233,7 +257,40 @@ async function handle(request, env) {
     return json(out);
   }
 
-  const m = path.match(/^\/posts\/(uz|ru)\/([^/]+)$/);
+  // Cover upload: the browser sends base64 so the binary never has to be
+  // multipart-parsed in the Worker; the token stays server-side either way.
+  if (path === "/media" && request.method === "POST") {
+    let payload;
+    try {
+      payload = await request.json();
+    } catch {
+      return json({ error: "Invalid request" }, 400);
+    }
+    const ext = IMAGE_EXT[String(payload.ext || "").toLowerCase().replace(/^\./, "")];
+    if (!ext) return json({ error: "Only .jpg, .png or .webp covers are allowed" }, 400);
+    const base = String(payload.name || "cover").toLowerCase()
+      .replace(/\.[a-z0-9]+$/, "").replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "").slice(0, 60) || "cover";
+    const data = String(payload.data || "");
+    if (!/^[A-Za-z0-9+/=]+$/.test(data)) return json({ error: "Invalid image data" }, 400);
+    if (data.length * 0.75 > MAX_IMAGE) {
+      return json({ error: "Rasm hajmi 2 MB dan oshmasin" }, 413);
+    }
+    const filename = `${base}.${ext}`;
+    const existingSha = await getSha(env, coverPath(filename));
+    const res = await gh(env, `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${coverPath(filename)}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        message: `${existingSha ? "Replace" : "Add"} book cover: ${filename}`,
+        content: data, branch: env.GITHUB_BRANCH,
+        ...(existingSha ? { sha: existingSha } : {}),
+      }),
+    });
+    if (!res.ok) throw new Error(`github cover upload: ${res.status}`);
+    return json({ ok: true, image: filename });
+  }
+
+  const m = path.match(/^\/books\/(uz|ru)\/([^/]+)$/);
   if (m) {
     const [, lang, slug] = m;
     if (!SLUG_RE.test(slug)) return json({ error: "Invalid slug" }, 400);
@@ -247,7 +304,7 @@ async function handle(request, env) {
 
     if (request.method === "PUT") {
       const raw = await request.text();
-      if (raw.length > MAX_BODY) return json({ error: "Post is too large" }, 413);
+      if (raw.length > MAX_BODY) return json({ error: "Entry is too large" }, 413);
       let post;
       try {
         post = JSON.parse(raw);
@@ -258,7 +315,7 @@ async function handle(request, env) {
       if (errs.length) return json({ error: errs.join("; ") }, 400);
       const existing = await getFile(env, file);
       await putFile(env, file, buildMarkdown(post),
-        `${existing ? "Update" : "Add"} ${lang} post: ${slug}`, existing?.sha);
+        `${existing ? "Update" : "Add"} ${lang} book: ${slug}`, existing?.sha);
       return json({ ok: true, created: !existing });
     }
 
@@ -267,7 +324,7 @@ async function handle(request, env) {
       if (!existing) return json({ error: "not found" }, 404);
       const res = await gh(env, `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${file}`, {
         method: "DELETE",
-        body: JSON.stringify({ message: `Delete ${lang} post: ${slug}`, sha: existing.sha, branch: env.GITHUB_BRANCH }),
+        body: JSON.stringify({ message: `Delete ${lang} book: ${slug}`, sha: existing.sha, branch: env.GITHUB_BRANCH }),
       });
       if (!res.ok) throw new Error(`github delete: ${res.status}`);
       return json({ ok: true });

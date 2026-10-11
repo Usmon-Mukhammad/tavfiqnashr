@@ -20,8 +20,8 @@ const env = {
 
 // ---- mock GitHub -----------------------------------------------------------
 const files = new Map([
-  ["content/blog/uz/tasavvuf-nima.md",
-    "title: Tasavvuf nima?\ndate: 2026-09-14\ndescription: Ta’riflar.\nsource: Kitob\n\nMatn boshlanadi.\n"],
+  ["content/books/uz/komil-inson.md",
+    "title: Komil inson\nauthor: Aziziddin Nasafiy\ndate: 2026-08-15\ndescription: Tasavvuf namunasi.\nimage: komil-inson.jpg\n\nMatn boshlanadi.\n"],
 ]);
 const calls = [];
 globalThis.fetch = async (url, init = {}) => {
@@ -32,9 +32,9 @@ globalThis.fetch = async (url, init = {}) => {
   const path = m ? decodeURIComponent(m[1]) : "";
   const ok = (body) => new Response(JSON.stringify(body), { status: 200, headers: { "content-type": "application/json" } });
 
-  if (path.startsWith("content/blog/") && !path.endsWith(".md")) {
+  if (path.startsWith("content/books/") && !path.endsWith(".md")) {
     const lang = path.split("/")[2];
-    return ok([...files.keys()].filter((f) => f.startsWith(`content/blog/${lang}/`))
+    return ok([...files.keys()].filter((f) => f.startsWith(`content/books/${lang}/`))
       .map((f) => ({ name: f.split("/").pop(), type: "file" })));
   }
   if ((init.method || "GET") === "GET") {
@@ -80,12 +80,12 @@ await t("accepts correct credentials and sets a hardened cookie", async () => {
 });
 
 await t("blocks unauthenticated API access", async () => {
-  assert.equal((await call("/posts")).status, 401);
+  assert.equal((await call("/books")).status, 401);
 });
 
 await t("rejects a forged session signature", async () => {
   const bad = cookie.replace(/.$/, (c) => (c === "A" ? "B" : "A"));
-  assert.equal((await call("/posts", { headers: { cookie: bad } })).status, 401);
+  assert.equal((await call("/books", { headers: { cookie: bad } })).status, 401);
 });
 
 await t("rejects an expired session", async () => {
@@ -93,87 +93,130 @@ await t("rejects an expired session", async () => {
   const r = await worker.fetch(new Request("https://tavfiqnashr.uz/api/admin/login",
     { method: "POST", body: JSON.stringify({ username: "nashriyot", password: PASSWORD }) }), short);
   const expired = r.headers.get("set-cookie").split(";")[0];
-  assert.equal((await worker.fetch(new Request("https://tavfiqnashr.uz/api/admin/posts",
+  assert.equal((await worker.fetch(new Request("https://tavfiqnashr.uz/api/admin/books",
     { headers: { cookie: expired } }), short)).status, 401);
 });
 
 await t("blocks writes without the CSRF header", async () => {
-  const r = await call("/posts/uz/x-post", {
+  const r = await call("/books/uz/x-post", {
     method: "PUT", headers: { cookie },
-    body: JSON.stringify({ title: "T", date: "2026-01-01", description: "D", body: "B" }),
+    body: JSON.stringify({ title: "T", author: "A", date: "2026-01-01", description: "D", image: "c.jpg", body: "B" }),
   });
   assert.equal(r.status, 403);
 });
 
 // ---- content ---------------------------------------------------------------
-await t("lists posts per language", async () => {
-  const d = await (await call("/posts", { headers: { cookie } })).json();
-  assert.deepEqual(d.uz, ["tasavvuf-nima"]);
+await t("lists books per language", async () => {
+  const d = await (await call("/books", { headers: { cookie } })).json();
+  assert.deepEqual(d.uz, ["komil-inson"]);
   assert.deepEqual(d.ru, []);
 });
 
-await t("reads an existing post and splits front matter from body", async () => {
-  const d = await (await call("/posts/uz/tasavvuf-nima", { headers: { cookie } })).json();
-  assert.equal(d.title, "Tasavvuf nima?");
-  assert.equal(d.source, "Kitob");
+await t("reads an existing book and splits front matter from body", async () => {
+  const d = await (await call("/books/uz/komil-inson", { headers: { cookie } })).json();
+  assert.equal(d.title, "Komil inson");
+  assert.equal(d.author, "Aziziddin Nasafiy");
+  assert.equal(d.image, "komil-inson.jpg");
   assert.equal(d.body.trim(), "Matn boshlanadi.");
 });
 
 await t("rejects a bad slug", async () => {
-  const r = await post("/posts/uz/Bad_Slug", { title: "T", date: "2026-01-01", description: "D", body: "B" }, { cookie });
+  const r = await post("/books/uz/Bad_Slug", { title: "T", author: "A", date: "2026-01-01", description: "D", image: "c.jpg", body: "B" }, { cookie });
   assert.equal(r.status, 400);
 });
 
 await t("rejects invalid front-matter values", async () => {
   for (const bad of [
-    { title: "", date: "2026-01-01", description: "D", body: "B" },
-    { title: "T", date: "01-01-2026", description: "D", body: "B" },
-    { title: "T", date: "2026-01-01", description: "D", body: "" },
-    { title: "Two\nlines", date: "2026-01-01", description: "D", body: "B" },
+    { title: "", author: "A", date: "2026-01-01", description: "D", image: "c.jpg" },
+    { title: "T", author: "", date: "2026-01-01", description: "D", image: "c.jpg" },
+    { title: "T", author: "A", date: "01-01-2026", description: "D", image: "c.jpg" },
+    { title: "T", author: "A", date: "2026-01-01", description: "D", image: "" },
+    { title: "T", author: "A", date: "2026-01-01", description: "D", image: "../escape.jpg" },
+    { title: "Two\nlines", author: "A", date: "2026-01-01", description: "D", image: "c.jpg" },
   ]) {
-    const r = await post("/posts/uz/some-slug", bad, { cookie });
+    const r = await post("/books/uz/some-slug", bad, { cookie });
     assert.equal(r.status, 400, JSON.stringify(bad));
   }
 });
 
-await t("creates a post with correct front matter", async () => {
+await t("creates a book with correct front matter", async () => {
   calls.length = 0;
-  const r = await post("/posts/ru/novaya-statya", {
-    title: "Новая статья", date: "2026-10-11", description: "Описание.",
-    source: "«Книга»", tags: "Тест", body: "## Заголовок\n\nТекст.",
+  const r = await post("/books/ru/novaya-kniga", {
+    title: "Новая книга", author: "Автор", date: "2026-10-11", description: "Описание.",
+    image: "novaya-kniga.jpg", pages: "120 стр.", featured: "yes",
+    body: "## Заголовок\n\nТекст.",
   }, { cookie });
   assert.equal(r.status, 200);
-  const md = files.get("content/blog/ru/novaya-statya.md");
+  const md = files.get("content/books/ru/novaya-kniga.md");
   assert.equal(md.split("\n\n")[0],
-    "title: Новая статья\ndate: 2026-10-11\ndescription: Описание.\nsource: «Книга»\ntags: Тест");
+    "title: Новая книга\nauthor: Автор\ndate: 2026-10-11\ndescription: Описание.\n" +
+    "image: novaya-kniga.jpg\npages: 120 стр.\nfeatured: yes");
   assert.match(md, /## Заголовок/);
   const created = calls.filter((c) => c.method === "PUT").pop();
   assert.equal("sha" in created.body, false, "a new file must not send a sha");
 });
 
-await t("updates an existing post using its sha", async () => {
+await t("updates an existing book using its sha", async () => {
   calls.length = 0;
-  const r = await post("/posts/uz/tasavvuf-nima", {
-    title: "Tasavvuf nima? (yangilandi)", date: "2026-09-14", description: "D", body: "Yangi matn.",
+  const r = await post("/books/uz/komil-inson", {
+    title: "Komil inson (yangilandi)", author: "Aziziddin Nasafiy", date: "2026-08-15",
+    description: "D", image: "komil-inson.jpg", body: "Yangi matn.",
   }, { cookie });
   assert.equal(r.status, 200);
   const put = calls.find((c) => c.method === "PUT");
   assert.ok(put, "expected a PUT to GitHub");
-  assert.equal(put.body.sha, "sha-content/blog/uz/tasavvuf-nima.md",
+  assert.equal(put.body.sha, "sha-content/books/uz/komil-inson.md",
     "an update must send the existing file sha or GitHub rejects it");
   assert.equal(put.body.branch, "main");
-  assert.match(files.get("content/blog/uz/tasavvuf-nima.md"), /yangilandi/);
+  assert.match(files.get("content/books/uz/komil-inson.md"), /yangilandi/);
 });
 
-await t("deletes a post", async () => {
-  const r = await call("/posts/ru/novaya-statya", { method: "DELETE", headers: { cookie, "x-requested-with": "tn-admin" } });
+await t("deletes a book", async () => {
+  const r = await call("/books/ru/novaya-kniga", { method: "DELETE", headers: { cookie, "x-requested-with": "tn-admin" } });
   assert.equal(r.status, 200);
-  assert.equal(files.has("content/blog/ru/novaya-statya.md"), false);
+  assert.equal(files.has("content/books/ru/novaya-kniga.md"), false);
+});
+
+// ---- cover upload ----------------------------------------------------------
+await t("uploads a cover and returns a safe file name", async () => {
+  const png = Buffer.from("fake-png-bytes").toString("base64");
+  const r = await call("/media", {
+    method: "POST", headers: { cookie, "x-requested-with": "tn-admin" },
+    body: JSON.stringify({ name: "Yangi Kitob! (2026)", ext: "JPEG", data: png }),
+  });
+  assert.equal(r.status, 200);
+  const d = await r.json();
+  assert.equal(d.image, "yangi-kitob-2026.jpg", "name must be slugified and the ext normalised");
+  assert.ok(files.has("assets/img/books/yangi-kitob-2026.jpg"));
+});
+
+await t("rejects a non-image extension", async () => {
+  const r = await call("/media", {
+    method: "POST", headers: { cookie, "x-requested-with": "tn-admin" },
+    body: JSON.stringify({ name: "x", ext: "svg", data: "AAAA" }),
+  });
+  assert.equal(r.status, 400);
+});
+
+await t("rejects an oversized cover", async () => {
+  const r = await call("/media", {
+    method: "POST", headers: { cookie, "x-requested-with": "tn-admin" },
+    body: JSON.stringify({ name: "big", ext: "jpg", data: "A".repeat(3 * 1024 * 1024) }),
+  });
+  assert.equal(r.status, 413);
+});
+
+await t("cover upload needs the CSRF header", async () => {
+  const r = await call("/media", {
+    method: "POST", headers: { cookie },
+    body: JSON.stringify({ name: "x", ext: "jpg", data: "AAAA" }),
+  });
+  assert.equal(r.status, 403);
 });
 
 // ---- secrets ---------------------------------------------------------------
 await t("never returns the GitHub token to the browser", async () => {
-  for (const p of ["/posts", "/posts/uz/tasavvuf-nima", "/session"]) {
+  for (const p of ["/books", "/books/uz/komil-inson", "/session"]) {
     const body = await (await call(p, { headers: { cookie } })).text();
     assert.equal(body.includes(env.GITHUB_TOKEN), false, p);
   }
@@ -181,7 +224,7 @@ await t("never returns the GitHub token to the browser", async () => {
 });
 
 await t("fails closed when a secret is missing", async () => {
-  const r = await worker.fetch(new Request("https://tavfiqnashr.uz/api/admin/posts"),
+  const r = await worker.fetch(new Request("https://tavfiqnashr.uz/api/admin/books"),
     { ...env, GITHUB_TOKEN: "" });
   assert.equal(r.status, 500);
 });

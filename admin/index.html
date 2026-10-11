@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Maqola tahrirlash — TAVFIQNASHR</title>
+<title>Kitoblarni boshqarish — TAVFIQNASHR</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0f3d33">
 <link rel="icon" href="../assets/img/logo.jpg">
@@ -178,6 +178,17 @@
   .tabs button{flex:1; padding:.45rem; border:1px solid var(--line); background:var(--cream);
                border-radius:8px; cursor:pointer; font:inherit; font-size:.85rem}
   .tabs button[aria-pressed="true"]{background:var(--green); color:#fff; border-color:var(--green)}
+  .cover-row{display:flex; gap:1rem; align-items:flex-start}
+  .cover-prev{
+    width:84px; height:112px; flex:none; border-radius:10px;
+    border:1px dashed var(--line); background:var(--cream) center/cover no-repeat;
+  }
+  .cover-prev.has{border-style:solid}
+  .cover-ctl{flex:1; min-width:0}
+  .cover-ctl input{margin-bottom:.5rem}
+  .check{display:flex; align-items:center; gap:.6rem; margin:.2rem 0 1rem; cursor:pointer}
+  .check input{width:auto}
+  .check span{font-size:.92rem; color:var(--ink)}
   .actions{display:flex; gap:.7rem; align-items:center; margin-top:1.4rem; flex-wrap:wrap}
   .msg{padding:.75rem 1rem; border-radius:10px; font-size:.9rem; margin-bottom:1rem}
   .msg.err{background:#fdecec; color:#8a1c1c; border:1px solid #f3c6c6}
@@ -212,7 +223,7 @@
 
    <div class="login-main">
     <h1>Tahrirlash paneli</h1>
-    <p class="login-sub">Maqolalarni qo‘shish va tahrirlash uchun tizimga kiring.</p>
+    <p class="login-sub">Kitoblarni qo‘shish va tahrirlash uchun tizimga kiring.</p>
 
     <div id="login-msg"></div>
 
@@ -239,9 +250,9 @@
 <!-- Editor ----------------------------------------------------------------->
 <main id="app" class="admin" hidden>
   <div class="admin-bar">
-    <h1>Maqolalar</h1>
+    <h1>Kitoblar</h1>
     <span class="spacer"></span>
-    <button class="btn btn-sm" id="new-btn" type="button">+ Yangi maqola</button>
+    <button class="btn btn-sm" id="new-btn" type="button">+ Yangi kitob</button>
     <button class="btn btn-sm btn-ghost" id="logout-btn" type="button">Chiqish</button>
   </div>
 
@@ -251,7 +262,7 @@
         <button type="button" data-lang="uz" aria-pressed="true">O‘zbekcha</button>
         <button type="button" data-lang="ru" aria-pressed="false">Ruscha</button>
       </div>
-      <h2>Mavjud maqolalar</h2>
+      <h2>Mavjud kitoblar</h2>
       <div id="post-list"></div>
     </aside>
 
@@ -259,18 +270,48 @@
       <div id="msg"></div>
       <form id="post-form">
         <div class="row">
-          <label class="field"><span>Sarlavha *</span><input name="title" required maxlength="200"></label>
-          <label class="field"><span>Sana *</span><input name="date" type="date" required></label>
+          <label class="field"><span>Kitob nomi *</span><input name="title" required maxlength="200"></label>
+          <label class="field"><span>Muallif *</span><input name="author" required maxlength="200"></label>
         </div>
-        <label class="field"><span>Manzil (slug)</span><input name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*">
-          <p class="hint">Sarlavhadan avtomatik yaratiladi. Mavjud maqolada o‘zgartirib bo‘lmaydi.</p></label>
-        <label class="field"><span>Qisqa tavsif *</span><input name="description" required maxlength="400">
-          <p class="hint">Ro‘yxatdagi kartada va havola ko‘rinishida chiqadi.</p></label>
+
         <div class="row">
-          <label class="field"><span>Manba kitob</span><input name="source" maxlength="200"></label>
-          <label class="field"><span>Teg</span><input name="tags" maxlength="60"></label>
+          <label class="field"><span>Sana *</span><input name="date" type="date" required>
+            <p class="hint">Yangi kitoblar ro‘yxatda birinchi turadi.</p></label>
+          <label class="field"><span>Manzil (slug)</span><input name="slug" pattern="[a-z0-9]+(-[a-z0-9]+)*">
+            <p class="hint">Nomdan avtomatik. Mavjud kitobda o‘zgarmaydi.</p></label>
         </div>
-        <label class="field"><span>Matn *</span><textarea name="body" required></textarea>
+
+        <label class="field"><span>Qisqa tavsif *</span><input name="description" required maxlength="400">
+          <p class="hint">Kartada va havola ko‘rinishida chiqadi.</p></label>
+
+        <label class="field"><span>Muqova rasmi *</span>
+          <div class="cover-row">
+            <div class="cover-prev" id="cover-prev" aria-hidden="true"></div>
+            <div class="cover-ctl">
+              <input name="image" readonly placeholder="rasm tanlanmagan">
+              <input type="file" id="cover-file" accept="image/jpeg,image/png,image/webp" hidden>
+              <button class="btn btn-sm btn-ghost" id="cover-btn" type="button">Rasm tanlash</button>
+              <p class="hint" id="cover-hint">JPG, PNG yoki WEBP · 2 MB gacha</p>
+            </div>
+          </div></label>
+
+        <div class="row">
+          <label class="field"><span>Narxi</span><input name="price" maxlength="60" placeholder="60 000 so‘m"></label>
+          <label class="field"><span>Sahifalar</span><input name="pages" maxlength="60" placeholder="236 bet"></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>Muqova</span><input name="cover" maxlength="60" placeholder="Qattiq muqova"></label>
+          <label class="field"><span>Matn tili</span><input name="language" maxlength="60" placeholder="Arabiy, asl holida"></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>Teg</span><input name="tag" maxlength="60" placeholder="To‘plam · 5 kitob"></label>
+          <label class="field"><span>Qisqa iqtibos</span><input name="quote" maxlength="160"></label>
+        </div>
+
+        <label class="check"><input type="checkbox" name="featured">
+          <span>Bosh sahifada “Yangilik” sifatida ko‘rsatilsin</span></label>
+
+        <label class="field"><span>To‘liq tavsif</span><textarea name="body"></textarea>
           <p class="hint">## Sarlavha · &gt; Iqtibos (keyingi qatorda — Muallif) · - ro‘yxat · **qalin** · *kursiv*</p></label>
 
         <div class="actions">
@@ -288,6 +329,8 @@
   "use strict";
   var API = "/api/admin";
   var lang = "uz", current = null, lists = { uz: [], ru: [] };
+  var FIELDS = ["title","author","date","description","image","price",
+                "pages","cover","language","tag","quote"];
 
   var $ = function (s) { return document.querySelector(s); };
   var form = $("#post-form");
@@ -327,7 +370,7 @@
     var box = $("#post-list");
     box.innerHTML = "";
     if (!lists[lang].length) {
-      box.innerHTML = '<p class="hint">Hali maqola yo‘q.</p>';
+      box.innerHTML = '<p class="hint">Hali kitob yo‘q.</p>';
       return;
     }
     lists[lang].forEach(function (slug) {
@@ -341,7 +384,7 @@
   }
 
   function refresh() {
-    return api("/posts").then(function (d) { lists = d; renderList(); });
+    return api("/books").then(function (d) { lists = d; renderList(); });
   }
 
   function blank() {
@@ -350,28 +393,66 @@
     form.date.value = new Date().toISOString().slice(0, 10);
     form.slug.readOnly = false;
     $("#delete-btn").hidden = true;
-    $("#state").textContent = "Yangi maqola (" + (lang === "uz" ? "o‘zbekcha" : "ruscha") + ")";
+    setCover("");
+    $("#state").textContent = "Yangi kitob (" + (lang === "uz" ? "o‘zbekcha" : "ruscha") + ")";
     note("#msg", "", "");
     renderList();
   }
 
+  function setCover(name) {
+    form.image.value = name || "";
+    var box = $("#cover-prev");
+    box.style.backgroundImage = name ? "url(../assets/img/books/" + name + ")" : "";
+    box.classList.toggle("has", !!name);
+  }
+
   function load(slug) {
-    api("/posts/" + lang + "/" + slug).then(function (p) {
+    api("/books/" + lang + "/" + slug).then(function (b) {
       current = slug;
-      form.title.value = p.title || "";
-      form.date.value = p.date || "";
+      FIELDS.forEach(function (f) { if (form[f]) form[f].value = b[f] || ""; });
       form.slug.value = slug;
       form.slug.readOnly = true;
-      form.description.value = p.description || "";
-      form.source.value = p.source || "";
-      form.tags.value = p.tags || "";
-      form.body.value = p.body || "";
+      form.featured.checked = /^(yes|true|1)$/i.test(b.featured || "");
+      form.body.value = b.body || "";
+      setCover(b.image || "");
       $("#delete-btn").hidden = false;
       $("#state").textContent = "Tahrirlanmoqda: " + slug;
       note("#msg", "", "");
       renderList();
     }).catch(function (e) { note("#msg", e.message, "err"); });
   }
+
+  // ---- cover upload -------------------------------------------------------
+  $("#cover-btn").addEventListener("click", function () { $("#cover-file").click(); });
+  $("#cover-file").addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      note("#msg", "Rasm hajmi 2 MB dan oshmasin.", "err");
+      e.target.value = ""; return;
+    }
+    var hint = $("#cover-hint"), was = hint.textContent;
+    hint.textContent = "Yuklanmoqda…";
+    var reader = new FileReader();
+    reader.onload = function () {
+      var b64 = String(reader.result).split(",")[1] || "";
+      var dot = file.name.lastIndexOf(".");
+      api("/media", { method: "POST", body: {
+        name: form.slug.value || form.title.value || file.name,
+        ext: dot > -1 ? file.name.slice(dot + 1) : "",
+        data: b64,
+      } }).then(function (r) {
+        setCover(r.image);
+        hint.textContent = was;
+        note("#msg", "Rasm yuklandi.", "ok");
+      }).catch(function (err) {
+        hint.textContent = was;
+        note("#msg", err.message, "err");
+      });
+      e.target.value = "";
+    };
+    reader.readAsDataURL(file);
+  });
 
   form.title.addEventListener("blur", function () {
     if (!current && !form.slug.value && form.title.value) form.slug.value = slugify(form.title.value);
@@ -384,14 +465,11 @@
     var btn = $("#save-btn");
     btn.disabled = true;
     note("#msg", "", "");
-    api("/posts/" + lang + "/" + slug, {
-      method: "PUT",
-      body: {
-        title: form.title.value.trim(), date: form.date.value,
-        description: form.description.value.trim(), source: form.source.value.trim(),
-        tags: form.tags.value.trim(), body: form.body.value,
-      },
-    }).then(function () {
+    var payload = { body: form.body.value, featured: form.featured.checked ? "yes" : "" };
+    FIELDS.forEach(function (f) {
+      payload[f] = f === "date" ? form[f].value : (form[f].value || "").trim();
+    });
+    api("/books/" + lang + "/" + slug, { method: "PUT", body: payload }).then(function () {
       current = slug;
       form.slug.readOnly = true;
       $("#delete-btn").hidden = false;
@@ -404,8 +482,8 @@
 
   $("#delete-btn").addEventListener("click", function () {
     if (!current) return;
-    if (!confirm("“" + current + "” maqolasi o‘chirilsinmi? Buni ortga qaytarib bo‘lmaydi.")) return;
-    api("/posts/" + lang + "/" + current, { method: "DELETE" }).then(function () {
+    if (!confirm("“" + current + "” kitobi o‘chirilsinmi? Buni ortga qaytarib bo‘lmaydi.")) return;
+    api("/books/" + lang + "/" + current, { method: "DELETE" }).then(function () {
       note("#msg", "O‘chirildi.", "ok");
       blank();
       return refresh();

@@ -409,6 +409,38 @@ p{margin:0 0 1em}
 .post-cta{max-width:40rem}
 .post-cta p{color:#c9c2ae; margin-bottom:1.6rem}
 
+/* ---------- Book page ---------- */
+.book-grid{
+  display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1fr);
+  gap:clamp(2rem,5vw,4rem); align-items:start;
+}
+.book-cover img{
+  width:100%; border-radius:var(--radius); box-shadow:var(--shadow-lg);
+  background:var(--cream-2);
+}
+.book-info .post-back{display:inline-block; margin-bottom:1.2rem}
+.book-info h1{font-size:clamp(2rem,4.2vw,2.8rem); margin:.4rem 0 .2rem}
+.book-info .byline{
+  font-family:var(--serif); font-style:italic; font-size:1.2rem;
+  color:var(--green); margin-bottom:1rem;
+}
+.book-info .specs{
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(8rem,1fr));
+  gap:1.2rem; margin:1.6rem 0 1.8rem; padding:1.4rem 0;
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+}
+.book-info .specs span{color:var(--muted)}
+.book-info .specs strong{color:var(--ink)}
+.order-note{margin:.9rem 0 0; font-size:.85rem; color:var(--muted)}
+
+.book-body{max-width:46rem; margin-top:3.2rem}
+
+@media (max-width:860px){
+  .book-grid{grid-template-columns:1fr}
+  .book-cover{max-width:22rem}
+  .book-body{margin-top:2.2rem}
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width:920px){
   .cards{grid-template-columns:1fr}
