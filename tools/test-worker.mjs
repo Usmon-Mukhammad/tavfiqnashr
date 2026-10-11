@@ -108,7 +108,11 @@ await t("blocks writes without the CSRF header", async () => {
 // ---- content ---------------------------------------------------------------
 await t("lists books per language", async () => {
   const d = await (await call("/books", { headers: { cookie } })).json();
-  assert.deepEqual(d.uz, ["komil-inson"]);
+  // Titles, not bare slugs: the admin list must say which book is which.
+  assert.equal(d.uz.length, 1);
+  assert.equal(d.uz[0].slug, "komil-inson");
+  assert.equal(d.uz[0].title, "Komil inson");
+  assert.equal(d.uz[0].image, "komil-inson.jpg");
   assert.deepEqual(d.ru, []);
 });
 

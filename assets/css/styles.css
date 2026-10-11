@@ -409,6 +409,15 @@ p{margin:0 0 1em}
 .post-cta{max-width:40rem}
 .post-cta p{color:#c9c2ae; margin-bottom:1.6rem}
 
+/* "Barcha kitoblar": a secondary action, so an outline button rather than a
+   second solid block competing with the cards above it. */
+.books-more{display:flex; justify-content:center; margin-top:2.6rem}
+.btn-arrow{gap:.7rem; padding-left:2.1rem; padding-right:1.7rem}
+.btn-arrow::after{content:"→"; transition:transform .2s ease}
+.btn-arrow:hover::after{transform:translateX(4px)}
+.btn-ghost.btn-arrow{border-color:var(--green); border-width:1.5px}
+.btn-ghost.btn-arrow:hover{background:var(--green); color:#fff; border-color:var(--green)}
+
 /* ---------- Book page ---------- */
 .book-grid{
   display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1fr);

@@ -246,13 +246,29 @@ async function handle(request, env) {
     return json({ error: "missing X-Requested-With" }, 403);
   }
 
+  // Returns enough of each book to render a readable list — a bare slug tells
+  // the publisher nothing about which book it is.
   if (path === "/books" && request.method === "GET") {
     const out = {};
     for (const lang of LANGS) {
       const res = await gh(env, `/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/content/books/${lang}?ref=${env.GITHUB_BRANCH}`);
-      out[lang] = res.ok
-        ? (await res.json()).filter((f) => f.name.endsWith(".md")).map((f) => f.name.slice(0, -3)).sort()
-        : [];
+      if (!res.ok) { out[lang] = []; continue; }
+      const slugs = (await res.json())
+        .filter((f) => f.name.endsWith(".md"))
+        .map((f) => f.name.slice(0, -3))
+        .slice(0, 60);                      // keep well inside the subrequest budget
+      const entries = await Promise.all(slugs.map(async (slug) => {
+        try {
+          const file = await getFile(env, contentPath(lang, slug));
+          const m = file ? parseMarkdown(file.text) : {};
+          return { slug, title: m.title || slug, image: m.image || "",
+                   date: m.date || "", featured: m.featured || "" };
+        } catch {
+          return { slug, title: slug, image: "", date: "", featured: "" };
+        }
+      }));
+      entries.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      out[lang] = entries;
     }
     return json(out);
   }

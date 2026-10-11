@@ -174,6 +174,16 @@
                padding:.5rem .6rem; border-radius:8px; font:inherit; font-size:.92rem; color:var(--ink)}
   .list button:hover{background:rgba(15,61,51,.07)}
   .list button[aria-current="true"]{background:var(--green); color:#fff}
+  .list-hint{font-size:.78rem; color:var(--muted); margin:-.3rem 0 .6rem}
+  .book-row{display:flex !important; align-items:center; gap:.6rem; padding:.45rem .5rem !important}
+  .row-thumb{
+    width:30px; height:40px; flex:none; border-radius:5px;
+    background:var(--cream-2) center/cover no-repeat; border:1px solid var(--line);
+  }
+  .book-row[aria-current="true"] .row-thumb{border-color:rgba(255,255,255,.4)}
+  .row-text{min-width:0; display:flex; flex-direction:column; line-height:1.25}
+  .row-text strong{font-weight:500; font-size:.92rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .row-text em{font-style:normal; font-size:.7rem; opacity:.65; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .tabs{display:flex; gap:.3rem; margin-bottom:.9rem}
   .tabs button{flex:1; padding:.45rem; border:1px solid var(--line); background:var(--cream);
                border-radius:8px; cursor:pointer; font:inherit; font-size:.85rem}
@@ -189,6 +199,15 @@
   .check{display:flex; align-items:center; gap:.6rem; margin:.2rem 0 1rem; cursor:pointer}
   .check input{width:auto}
   .check span{font-size:.92rem; color:var(--ink)}
+  /* Pinned to the bottom of the viewport while scrolling the form: on a long
+     book entry the Save and Delete buttons were otherwise off-screen, which
+     made it look as though existing books could not be deleted. */
+  #post-form .actions{
+    position:sticky; bottom:0; z-index:5;
+    margin:1.4rem -1.8rem -1.8rem; padding:1rem 1.8rem;
+    background:rgba(255,255,255,.96); backdrop-filter:blur(6px);
+    border-top:1px solid var(--line); border-radius:0 0 var(--radius) var(--radius);
+  }
   .actions{display:flex; gap:.7rem; align-items:center; margin-top:1.4rem; flex-wrap:wrap}
   .msg{padding:.75rem 1rem; border-radius:10px; font-size:.9rem; margin-bottom:1rem}
   .msg.err{background:#fdecec; color:#8a1c1c; border:1px solid #f3c6c6}
@@ -263,6 +282,7 @@
         <button type="button" data-lang="ru" aria-pressed="false">Ruscha</button>
       </div>
       <h2>Mavjud kitoblar</h2>
+      <p class="list-hint">Tahrirlash yoki o‘chirish uchun kitobni tanlang.</p>
       <div id="post-list"></div>
     </aside>
 
@@ -373,11 +393,22 @@
       box.innerHTML = '<p class="hint">Hali kitob yo‘q.</p>';
       return;
     }
-    lists[lang].forEach(function (slug) {
+    lists[lang].forEach(function (it) {
+      // The API used to return bare slugs; tolerate both shapes.
+      var slug = typeof it === "string" ? it : it.slug;
+      var title = (it && it.title) || slug;
+      var img = it && it.image;
       var b = document.createElement("button");
       b.type = "button";
-      b.textContent = slug;
+      b.className = "book-row";
       b.setAttribute("aria-current", String(current === slug));
+      b.innerHTML =
+        '<span class="row-thumb"' +
+          (img ? ' style="background-image:url(../assets/img/books/' + img + ')"' : "") +
+        '></span><span class="row-text"><strong></strong><em></em></span>';
+      b.querySelector("strong").textContent = title;
+      b.querySelector("em").textContent =
+        (it && it.featured && /^(yes|true|1)$/i.test(it.featured) ? "Yangilik · " : "") + slug;
       b.onclick = function () { load(slug); };
       box.appendChild(b);
     });
