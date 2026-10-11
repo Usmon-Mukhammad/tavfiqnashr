@@ -72,7 +72,9 @@ p{margin:0 0 1em}
   transition:transform .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease;
   white-space:nowrap;
 }
-.btn:hover{background:var(--green-soft); border-color:var(--green-soft); color:#fff; transform:translateY(-2px); box-shadow:var(--shadow)}
+.btn:hover{background:var(--green-soft); border-color:var(--green-soft); color:#fff}
+@media (hover:hover){ .btn:hover{transform:translateY(-2px); box-shadow:var(--shadow)} }
+.btn:active{transform:translateY(0) scale(.98); box-shadow:none; transition-duration:.08s}
 .btn-sm{padding:.5rem 1.05rem; font-size:.85rem}
 .btn-lg{padding:.9rem 1.9rem; font-size:1rem}
 .btn-ghost{background:transparent; color:var(--green); border-color:var(--line)}
@@ -231,11 +233,20 @@ p{margin:0 0 1em}
   overflow:hidden; box-shadow:var(--shadow);
   transition:transform .25s ease, box-shadow .25s ease;
 }
-.card:hover{transform:translateY(-5px); box-shadow:var(--shadow-lg)}
 .card-media{aspect-ratio:4/5; background:var(--cream-2); overflow:hidden}
-.card-media img{width:100%; height:100%; object-fit:cover; transition:transform .5s ease}
-.card:hover .card-media img{transform:scale(1.04)}
+.card-media img{width:100%; height:100%; object-fit:cover; transition:transform .5s ease, opacity .5s ease}
+@media (hover:hover){
+  .card:hover{transform:translateY(-5px); box-shadow:var(--shadow-lg)}
+  .card:hover .card-media img{transform:scale(1.04)}
+}
+.card{position:relative}
 .card-body{padding:1.5rem; display:flex; flex-direction:column; flex:1}
+/* Stretch the title link over the card, so the hover lift tells the truth. */
+.card h3 a{color:inherit}
+.card h3 a::after{content:""; position:absolute; inset:0; z-index:1; border-radius:inherit}
+.card h3 a:focus-visible{outline:none}
+.card:has(h3 a:focus-visible){outline:2px solid var(--gold); outline-offset:4px}
+.card .link-arrow{position:relative; z-index:2}
 .card-body p{font-size:.92rem; color:var(--muted)}
 .card .byline{font-family:var(--serif); font-style:italic; font-size:1.05rem; color:var(--green); margin-top:-.5em}
 .h-sub{display:block; font-size:.82em; color:var(--muted); font-style:italic; font-weight:400}
@@ -295,7 +306,8 @@ p{margin:0 0 1em}
   border-radius:var(--radius); padding:1.35rem;
   transition:background .22s ease, border-color .22s ease, transform .22s ease;
 }
-.ccard:hover{background:rgba(255,255,255,.1); border-color:var(--gold); transform:translateY(-3px)}
+.ccard:hover{background:rgba(255,255,255,.1); border-color:var(--gold)}
+@media (hover:hover){ .ccard:hover{transform:translateY(-3px)} }
 .ccard-label{font-size:.7rem; letter-spacing:.16em; text-transform:uppercase; color:var(--gold-light)}
 .ccard strong{font-family:var(--serif); font-size:1.28rem; color:#fff; font-weight:500}
 .ccard-note{font-size:.82rem; color:#a9a390; line-height:1.45}
@@ -331,55 +343,79 @@ p{margin:0 0 1em}
 .to-top:hover{background:var(--green-soft); color:#fff}
 
 /* ---------- Reveal on scroll ---------- */
-.reveal{opacity:0; transform:translateY(22px); transition:opacity .7s ease, transform .7s ease}
-.reveal.in{opacity:1; transform:none}
+/* Only elements that start BELOW the fold get .reveal (see main.js), so first
+   paint is never blank. The transition lives on .reveal.in alone and both
+   classes are removed when it ends, so an element's own hover transitions are
+   never overridden. --rd is the stagger among siblings, not page order. */
+.reveal{opacity:0; transform:translateY(20px)}
+.reveal.from-left{transform:translateX(-28px)}
+.reveal.from-right{transform:translateX(28px)}
+.reveal.in{
+  opacity:1; transform:none;
+  transition:opacity .65s ease var(--rd,0ms), transform .75s cubic-bezier(.2,.7,.2,1) var(--rd,0ms);
+}
 
-/* ---------- Blog ---------- */
-/* Page heading for the listing — the homepage hero does not apply here. */
+/* ---------- Load-in, above the fold ----------
+   The hero and the top of a book page are on screen at load, so they use a
+   one-shot CSS animation rather than the scroll observer. */
+@keyframes riseIn{from{opacity:0; transform:translateY(16px)} to{opacity:1; transform:none}}
+@keyframes fadeIn{from{opacity:0} to{opacity:1}}
+@keyframes coverIn{from{opacity:0; transform:translateY(18px) scale(.98)} to{opacity:1; transform:none}}
+
+.hero .eyebrow     {animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both .05s}
+.hero h1           {animation:riseIn .8s cubic-bezier(.2,.7,.2,1) both .15s}
+.hero .lead        {animation:riseIn .8s cubic-bezier(.2,.7,.2,1) both .28s}
+.hero .hero-actions{animation:riseIn .8s cubic-bezier(.2,.7,.2,1) both .4s}
+.hero .stats       {animation:fadeIn 1s ease both .6s}
+.hero .ornament    {animation:fadeIn 1.6s ease both}
+
+.book-cover{animation:coverIn .8s cubic-bezier(.2,.7,.2,1) both .05s}
+.book-info > *{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both}
+.book-info > :nth-child(2){animation-delay:.10s}
+.book-info > :nth-child(3){animation-delay:.16s}
+.book-info > :nth-child(4){animation-delay:.22s}
+.book-info > :nth-child(5){animation-delay:.28s}
+.book-info > :nth-child(n+6){animation-delay:.34s}
+.page-head .wrap > *{animation:riseIn .7s cubic-bezier(.2,.7,.2,1) both}
+.page-head .wrap > :nth-child(2){animation-delay:.08s}
+.page-head .wrap > :nth-child(3){animation-delay:.16s}
+
+/* Lazy covers fade in when they arrive instead of popping. Scoped to .js so
+   images can never be stuck invisible if the script does not run. */
+/* :where() keeps this at zero specificity, so components that define their own
+   transition (card zoom, release hover) keep it — they list opacity too. */
+:where(.js img[loading="lazy"]){transition:opacity .5s ease}
+.js img[loading="lazy"]:not(.is-loaded){opacity:0}
+
+/* ---------- Small affordances ---------- */
+@media (hover:hover) and (min-width:761px){
+  .nav a:not(.btn){position:relative}
+  .nav a:not(.btn)::after{
+    content:""; position:absolute; left:0; right:0; bottom:-6px; height:1.5px;
+    background:var(--gold); transform:scaleX(0); transform-origin:left;
+    transition:transform .25s ease;
+  }
+  .nav a:not(.btn):hover::after{transform:scaleX(1)}
+}
+.release-media img{transition:transform .6s cubic-bezier(.2,.7,.2,1), opacity .5s ease}
+@media (hover:hover){ .release-media:hover img{transform:scale(1.02)} }
+
+/* ---------- Catalogue page head ---------- */
 .page-head{padding-bottom:0}
 .page-head h1{font-size:clamp(2.2rem,5vw,3.2rem); margin-bottom:.25em}
 .page-head .section-sub{max-width:42rem}
 
-.post-list{display:grid; gap:1.4rem}
-.post-item{
-  background:var(--white); border:1px solid var(--line); border-radius:var(--radius);
-  padding:1.9rem 1.8rem; box-shadow:var(--shadow);
-  transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease;
-}
-.post-item:hover{transform:translateY(-3px); box-shadow:var(--shadow-lg); border-color:var(--gold)}
-.post-item h3{font-size:1.45rem; margin:.5rem 0 .4rem}
-.post-item h3 a{color:var(--ink)}
-.post-item h3 a:hover{color:var(--green)}
-.post-item p{color:var(--muted); font-size:.96rem; margin-bottom:1rem; max-width:48rem}
 
-.post-meta{
-  display:flex; align-items:center; flex-wrap:wrap; gap:.5rem;
-  font-size:.78rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
-}
-.post-meta .dot{color:var(--line)}
-.post-tag{
-  margin-left:.2rem; padding:.22rem .6rem; border-radius:999px;
-  background:rgba(15,61,51,.08); color:var(--green);
-  font-size:.68rem; font-weight:600; letter-spacing:.1em;
-}
 
-/* ---------- Article ---------- */
-.post-wrap{max-width:46rem}
 .post-back{
   display:inline-block; margin-bottom:1.6rem;
   font-size:.88rem; color:var(--muted);
 }
 .post-back:hover{color:var(--green)}
-.post h1{font-size:clamp(2rem,4.4vw,2.9rem); margin:.6rem 0 .5rem}
 .post-lead{
   font-family:var(--serif); font-size:1.26rem; line-height:1.5;
   color:var(--muted); margin-bottom:1rem;
 }
-.post-source{
-  font-size:.86rem; color:var(--muted);
-  padding-left:.9rem; border-left:2px solid var(--gold); margin-bottom:0;
-}
-.post-source cite{font-style:italic; color:var(--green)}
 
 /* Long-form body. Generated from Markdown, so style by element, not class. */
 .prose{margin-top:2.4rem}
@@ -406,8 +442,6 @@ p{margin:0 0 1em}
   margin-top:.7rem; font-size:.85rem; color:var(--muted); font-style:italic;
 }
 
-.post-cta{max-width:40rem}
-.post-cta p{color:#c9c2ae; margin-bottom:1.6rem}
 
 /* "Barcha kitoblar": a secondary action, so an outline button rather than a
    second solid block competing with the cards above it. */
@@ -598,18 +632,6 @@ p{margin:0 0 1em}
   .series-cta{margin-top:2rem}
   .series-cta .btn{width:100%}
 
-  /* --- Blog --- */
-  .post-item{padding:1.4rem 1.3rem; border-radius:18px}
-  .post-item h3{font-size:1.25rem}
-  .post-meta{font-size:.72rem; gap:.4rem}
-  .post-lead{font-size:1.1rem}
-  .prose{margin-top:1.8rem}
-  .prose h2{font-size:1.4rem; margin-top:2rem; padding-top:1.3rem}
-  .prose p,.prose ul,.prose ol{line-height:1.75}
-  .prose blockquote{padding:1.15rem 1.2rem; margin:1.4rem 0}
-  .prose blockquote p{font-size:1.1rem}
-  .post-cta .btn{width:100%}
-
   /* --- Quotes --- */
   .quotes blockquote{padding:1.5rem 1.35rem; border-radius:18px; margin-bottom:1.2rem}
   .quotes p{font-size:1.14rem; line-height:1.48}
@@ -656,6 +678,20 @@ p{margin:0 0 1em}
 
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  *,*::before,*::after{animation-duration:.01ms !important; transition-duration:.01ms !important}
+  *,*::before,*::after{
+    animation-duration:.01ms !important; animation-delay:0s !important;
+    transition-duration:.01ms !important; transition-delay:0s !important;
+  }
   .reveal{opacity:1; transform:none}
+  .js img[loading="lazy"]{opacity:1}
+}
+
+/* Printing or "Save as PDF" never scrolls, so the observer never fires —
+   without this, anything below the fold would print blank. */
+@media print{
+  .reveal{opacity:1 !important; transform:none !important}
+  .js img[loading="lazy"]{opacity:1 !important}
+  *,*::before,*::after{animation:none !important; transition:none !important}
+  .site-header,.nav-backdrop,.to-top{position:static}
+  .to-top,.nav-toggle,.lang{display:none !important}
 }

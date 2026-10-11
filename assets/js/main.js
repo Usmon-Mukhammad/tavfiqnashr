@@ -67,28 +67,66 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  /* Reveal on scroll */
+  /* Reveal on scroll
+     - Never hides anything already on screen at load, so first paint is never
+       blank (the hero and the top of book pages use CSS load-in instead).
+     - Stagger is by position among siblings, so a row of cards goes left to
+       right, not in page-wide index order.
+     - Once revealed, the reveal classes are removed so each element gets its
+       own hover transitions back. */
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var targets = document.querySelectorAll(
     '.section-head, .about-text, .about-figure, .release-media, .release-body, ' +
-    '.card, .series li, .quotes blockquote, .contact-lead, .ccard, .stats'
+    '.cards > .card, .series li, .quotes blockquote, .contact-lead, .ccard, ' +
+    '.book-body, .books-more'
   );
 
-  if ('IntersectionObserver' in window) {
+  if (!reduce && 'IntersectionObserver' in window) {
+    var finish = function (el) {
+      el.classList.remove('reveal', 'in', 'from-left', 'from-right');
+      el.style.removeProperty('--rd');
+    };
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in');
-          io.unobserve(entry.target);
-        }
+        if (!entry.isIntersecting) return;
+        var el = entry.target;
+        io.unobserve(el);
+        el.classList.add('in');
+        el.addEventListener('transitionend', function done(e) {
+          if (e.target !== el || e.propertyName !== 'transform') return;
+          el.removeEventListener('transitionend', done);
+          finish(el);
+        });
+        // Safety net if transitionend never fires (tab hidden, etc.).
+        setTimeout(function () { finish(el); }, 1600);
       });
-    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    }, { rootMargin: '0px 0px -6% 0px', threshold: 0.1 });
 
-    targets.forEach(function (el, i) {
+    var fold = window.innerHeight;
+    targets.forEach(function (el) {
+      if (el.getBoundingClientRect().top < fold) return;   // on screen already
+      var sibs = [].filter.call(el.parentNode.children, function (c) {
+        return c.matches && c.matches(el.tagName.toLowerCase() + (el.className ? '.' + el.className.trim().split(/\s+/)[0] : ''));
+      });
+      var i = Math.min(sibs.indexOf(el), 4);
       el.classList.add('reveal');
-      el.style.transitionDelay = (i % 4) * 70 + 'ms';
+      if (el.classList.contains('release-media')) el.classList.add('from-left');
+      if (el.classList.contains('release-body')) el.classList.add('from-right');
+      el.style.setProperty('--rd', (i > 0 ? i * 90 : 0) + 'ms');
       io.observe(el);
     });
   }
+
+  /* Lazy images fade in when they arrive instead of popping. */
+  document.documentElement.classList.add('js');
+  [].forEach.call(document.querySelectorAll('img[loading="lazy"]'), function (img) {
+    var mark = function () { img.classList.add('is-loaded'); };
+    if (img.complete && img.naturalWidth) mark();
+    else {
+      img.addEventListener('load', mark, { once: true });
+      img.addEventListener('error', mark, { once: true });   // never stay invisible
+    }
+  });
 
   /* Footer year */
   document.getElementById('year').textContent = new Date().getFullYear();
