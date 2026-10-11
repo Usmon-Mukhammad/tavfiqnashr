@@ -363,12 +363,18 @@ a{transition:color .2s ease}
   position:fixed; right:1.4rem; bottom:1.4rem; z-index:40;
   width:44px; height:44px; display:grid; place-items:center;
   background:var(--green); color:#fff; border-radius:50%;
-  box-shadow:var(--shadow-lg);
+  /* A cream ring keeps it visible on the dark contact section and footer,
+     where the bare green was the same colour as the background (1.00:1). */
+  border:2px solid rgba(250,246,236,.85);
+  box-shadow:0 10px 28px -10px rgba(0,0,0,.55);
+  font-size:1.05rem; line-height:1;
   opacity:0; visibility:hidden; transform:translateY(10px);
-  transition:opacity .25s ease, transform .25s ease, visibility .25s;
+  transition:opacity .25s ease, transform .25s ease, visibility .25s,
+             background-color .2s ease, border-color .2s ease;
 }
 .to-top.show{opacity:1; visibility:visible; transform:none}
-.to-top:hover{background:var(--green-soft); color:#fff}
+.to-top:hover{background:#24725f; color:#fff; border-color:var(--gold-light)}
+.to-top:focus-visible{outline:none; box-shadow:0 0 0 3px var(--gold)}
 
 /* ---------- Reveal on scroll ---------- */
 /* Scroll-in is reserved for the image-led blocks (book cards and the

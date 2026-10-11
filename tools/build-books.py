@@ -319,7 +319,7 @@ def shell(lang, *, title, desc, canonical, og_image, body, alt_url, alt_href,
 
 <a class="skip" href="#main">{E(c['skip'])}</a>
 
-<header class="site-header" id="top">
+<header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="{up}{c['home']}">
       <img src="{up}assets/img/logo.jpg" alt="TAVFIQNASHR" width="48" height="48">

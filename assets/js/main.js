@@ -58,6 +58,20 @@
   if (mq.addEventListener) mq.addEventListener('change', onChange);
   else if (mq.addListener) mq.addListener(onChange);
 
+  /* Back to top.
+     The link targets "#top", which the HTML standard treats as "the top of the
+     document" as long as no element claims that id — so it also works without
+     JavaScript. (It used to point at the sticky header, which is always "at the
+     top", so clicking it moved the page only 84px.) This keeps the URL clean,
+     respects reduced motion, and moves keyboard focus up with the scroll. */
+  toTop.addEventListener('click', function (e) {
+    e.preventDefault();
+    var instant = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: instant ? 'auto' : 'smooth' });
+    var brand = document.querySelector('.brand');
+    if (brand) brand.focus({ preventScroll: true });
+  });
+
   /* Sticky header shadow + back-to-top visibility */
   function onScroll() {
     var y = window.scrollY;
