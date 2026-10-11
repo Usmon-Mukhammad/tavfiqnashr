@@ -22,6 +22,7 @@ run, so the command is idempotent.
 """
 from __future__ import annotations
 
+import hashlib
 import html
 import os
 import re
@@ -35,6 +36,30 @@ IMG_DIR = os.path.join("assets", "img", "books")
 # Where "Buyurtma berish" sends buyers: the person who takes orders,
 # not the channel.
 ORDER_URL = "https://t.me/Odiljon_Yusupov"
+
+# Cloudflare caches CSS and JS at the edge, so an edited stylesheet can keep
+# serving the old copy for hours. Every page references them with ?v=<hash of
+# their contents>: any change produces a new URL, which the cache has to fetch.
+def _asset_version() -> str:
+    h = hashlib.sha1()
+    for rel in ("assets/css/styles.css", "assets/js/main.js"):
+        with open(os.path.join(ROOT, rel), "rb") as fh:
+            h.update(fh.read())
+    return h.hexdigest()[:10]
+
+
+ASSET_VER = _asset_version()
+STAMP_RE = re.compile(r'(assets/(?:css/styles\.css|js/main\.js))(?:\?v=[0-9a-f]+)?"')
+
+
+def stamp_assets(path: str) -> bool:
+    """Point a hand-written page at the current asset version."""
+    src = open(path, encoding="utf-8").read()
+    new = STAMP_RE.sub(lambda m: f'{m.group(1)}?v={ASSET_VER}"', src)
+    if new != src:
+        open(path, "w", encoding="utf-8").write(new)
+        return True
+    return False
 
 MONTHS = {
     "uz": ["yanvar", "fevral", "mart", "aprel", "may", "iyun",
@@ -288,7 +313,7 @@ def shell(lang, *, title, desc, canonical, og_image, body, alt_url, alt_href,
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{up}assets/css/styles.css">
+<link rel="stylesheet" href="{up}assets/css/styles.css?v={ASSET_VER}">
 </head>
 <body>
 
@@ -350,7 +375,7 @@ def shell(lang, *, title, desc, canonical, og_image, body, alt_url, alt_href,
 
 <a class="to-top" href="#top" aria-label="{E(c['totop'], quote=True)}">↑</a>
 
-<script src="{up}assets/js/main.js"></script>
+<script src="{up}assets/js/main.js?v={ASSET_VER}"></script>
 </body>
 </html>
 """
@@ -544,6 +569,10 @@ def main():
             if name.endswith(".html") and name not in keep:
                 os.remove(os.path.join(d, name))
                 removed.append(os.path.relpath(os.path.join(d, name), ROOT))
+
+    for page in ("index.html", "ru.html", os.path.join("admin", "index.html")):
+        if stamp_assets(os.path.join(ROOT, page)):
+            written.append(page)
 
     for lang, books, page in (("uz", uz, "index.html"), ("ru", ru, "ru.html")):
         p = os.path.join(ROOT, page)

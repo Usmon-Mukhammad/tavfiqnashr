@@ -1,4 +1,5 @@
-# Regenerates the books catalogue HTML whenever Markdown or a cover changes.
+# Regenerates the books catalogue HTML whenever Markdown or a cover changes,
+# and re-stamps the ?v= asset version whenever the CSS or JS changes.
 #
 # The admin Worker commits only content/books/** and assets/img/books/**. This
 # workflow turns that into the committed HTML that GitHub Pages serves. The
@@ -12,6 +13,8 @@ on:
     paths:
       - 'content/books/**'
       - 'assets/img/books/**'
+      - 'assets/css/**'
+      - 'assets/js/**'
       - 'tools/build-books.py'
   workflow_dispatch:
 
@@ -37,12 +40,12 @@ jobs:
 
       - name: Commit regenerated HTML
         run: |
-          if git diff --quiet -- kitoblar index.html ru.html; then
+          if git diff --quiet -- kitoblar index.html ru.html admin/index.html; then
             echo "No HTML changes to commit."
             exit 0
           fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add kitoblar index.html ru.html
+          git add kitoblar index.html ru.html admin/index.html
           git commit -m "Rebuild catalogue from Markdown [skip ci]"
           git push
