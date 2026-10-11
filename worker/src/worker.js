@@ -52,7 +52,14 @@ async function verifyPassword(password, stored) {
   const parts = String(stored || "").split("$");
   if (parts.length !== 4 || parts[0] !== "pbkdf2") return false;
   const iterations = Number(parts[1]);
+  // Workers' WebCrypto refuses PBKDF2 above 100k iterations, and deriveBits
+  // throws rather than returning false — catch it here so a mis-generated hash
+  // is a clear log line, not an opaque 500.
   if (!Number.isInteger(iterations) || iterations < 1000) return false;
+  if (iterations > 100000) {
+    console.error(`ADMIN_PASSWORD_HASH uses ${iterations} iterations; Workers allows at most 100000. Regenerate it with tools/gen-admin-password.py`);
+    return false;
+  }
   let salt, expected;
   try {
     salt = b64.dec(parts[2]);

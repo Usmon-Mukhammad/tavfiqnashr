@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import cryptoNode from "node:crypto";
 
 const PASSWORD = "a-very-long-test-password";
-const ITER = 210000;
+const ITER = 100000;  // must stay within the Workers cap
 const salt = cryptoNode.randomBytes(16);
 const digest = cryptoNode.pbkdf2Sync(PASSWORD, salt, ITER, 32, "sha256");
 
@@ -184,6 +184,29 @@ await t("fails closed when a secret is missing", async () => {
   const r = await worker.fetch(new Request("https://tavfiqnashr.uz/api/admin/posts"),
     { ...env, GITHUB_TOKEN: "" });
   assert.equal(r.status, 500);
+});
+
+// ---- platform limits ------------------------------------------------------
+// Workers' WebCrypto rejects PBKDF2 above 100k iterations while Node and
+// Python accept far more, so a hash that works locally can still 500 in
+// production. Pin both generators to the ceiling.
+await t("both password generators stay within the Workers PBKDF2 cap", async () => {
+  const fs = await import("node:fs");
+  for (const f of ["tools/hash-password.py", "tools/gen-admin-password.py"]) {
+    const src = fs.readFileSync(new URL("../" + f, import.meta.url), "utf8");
+    const m = src.match(/ITERATIONS = ([\d_]+)/);
+    assert.ok(m, `${f}: ITERATIONS not found`);
+    const iters = Number(m[1].replace(/_/g, ""));
+    assert.ok(iters <= 100000, `${f}: ${iters} iterations exceeds the Workers limit of 100000`);
+    assert.ok(iters >= 100000, `${f}: ${iters} iterations is below the ceiling we can afford`);
+  }
+});
+
+await t("rejects a hash whose iteration count Workers cannot run", async () => {
+  const tooMany = { ...env, ADMIN_PASSWORD_HASH: env.ADMIN_PASSWORD_HASH.replace(/^pbkdf2\$\d+/, "pbkdf2$210000") };
+  const r = await worker.fetch(new Request("https://tavfiqnashr.uz/api/admin/login",
+    { method: "POST", body: JSON.stringify({ username: "nashriyot", password: PASSWORD }) }), tooMany);
+  assert.equal(r.status, 401, "must fail closed as a login failure, not a 500");
 });
 
 console.log(`\n${pass} checks passed`);

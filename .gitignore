@@ -13,3 +13,6 @@ Thumbs.db
 # Worker tooling
 worker/node_modules/
 worker/.wrangler/
+
+# Local admin password hand-off file (never commit)
+worker/.admin-password.txt

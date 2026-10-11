@@ -17,7 +17,7 @@ import hashlib
 import os
 import sys
 
-ITERATIONS = 210_000  # OWASP guidance for PBKDF2-HMAC-SHA256
+ITERATIONS = 100_000  # Cloudflare Workers' WebCrypto rejects more than this
 
 
 def main() -> int:

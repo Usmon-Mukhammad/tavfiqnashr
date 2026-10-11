@@ -482,6 +482,7 @@ def main():
     have = {"uz": {p["slug"] for p in uz}, "ru": {p["slug"] for p in ru}}
     written = []
 
+    removed = []
     for lang, posts in (("uz", uz), ("ru", ru)):
         d = os.path.join(ROOT, L[lang]["dir"])
         os.makedirs(d, exist_ok=True)
@@ -494,6 +495,15 @@ def main():
             open(f, "w", encoding="utf-8").write(
                 build_post(lang, p, p["slug"] in have[other]))
             written.append(os.path.relpath(f, ROOT))
+
+        # Delete article pages whose Markdown is gone, otherwise a post removed
+        # in the editor disappears from the listing but stays reachable at its
+        # own URL for ever. Only ever touches <slug>.html in this directory.
+        keep = {p["slug"] + ".html" for p in posts} | {"index.html"}
+        for name in sorted(os.listdir(d)):
+            if name.endswith(".html") and name not in keep:
+                os.remove(os.path.join(d, name))
+                removed.append(os.path.relpath(os.path.join(d, name), ROOT))
 
     for lang, posts, page, marker in (
             ("uz", uz, "index.html", "  <!-- CONTACT -->"),
@@ -509,6 +519,8 @@ def main():
     print(f"built {len(uz)} uz + {len(ru)} ru posts")
     for w in written:
         print("  ", w)
+    for r in removed:
+        print("   removed", r)
 
 
 if __name__ == "__main__":
