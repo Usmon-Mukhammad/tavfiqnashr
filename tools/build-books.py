@@ -549,6 +549,17 @@ def main():
         if inject(p, "FEATURED", build_featured(lang, books), "  <!-- BOOKS:START"):
             written.append(page)
 
+    # Covers are deliberately NOT auto-deleted: the same file is normally shared
+    # by the uz and ru entries, and a cover is uploaded before its book is
+    # saved — a build triggered by that upload would delete it mid-flow. Report
+    # them instead so they can be cleaned up by hand.
+    used = {b["image"] for b in uz} | {b["image"] for b in ru}
+    img_dir = os.path.join(ROOT, IMG_DIR)
+    if os.path.isdir(img_dir):
+        for name in sorted(os.listdir(img_dir)):
+            if name.lower().endswith((".jpg", ".png", ".webp")) and name not in used:
+                print(f"  note: {IMG_DIR}/{name} is not used by any book")
+
     for slug in sorted(have["uz"] ^ have["ru"]):
         side = "uz" if slug in have["uz"] else "ru"
         print(f"  note: '{slug}' exists only in {side}; its language switcher "
