@@ -2,7 +2,7 @@ title: Haqlar kitobi
 author: Hakim Termiziy
 date: 2026-10-28
 description: "Kitobul huquq" — IX asrning yirik mutasavvifi va faqihi Hakim Termiziy qalamiga mansub bo‘lib, inson va jamiyat o‘rtasidagi ijtimoiy, axloqiy va ma’naviy huquqlarni chuqur sharhlab beradigan noyob risoladir. Asar Qur’on va hadis asosida yozilgan bo‘lib, har bir shaxs yoki toifaga nisbatan mo‘min kishi zimmasidagi mas’uliyatni "marofiq" (ehson) tamoyili asosida tartiblaydi.
-image: photo-2026-10-28-07-30-29.jpg
+image: haqlar-kitobi.jpg
 pages: 264 bet
 cover: Qattiq muqova
 language: Qo'lyozma, arab va o'zbek
